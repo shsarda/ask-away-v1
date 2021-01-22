@@ -562,7 +562,7 @@
         ],
         "cors": {
           "allowedOrigins": [
-            "[variables('SignalRFunctionBaseUrl')]"
+            "[concat('https://', variables('frontDoorDomain'))]"
           ]
         }
       }
