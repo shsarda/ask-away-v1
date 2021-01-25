@@ -60,6 +60,7 @@ ApplicationInsightsInstrumentationKey="{{ApplicationInsightsInstrumentationKey}}
 MicrosoftAppPassword="{{MicrosoftAppPassword}}"
 AvatarKey="{{AvatarKey}}"
 debugMode="true"
+ASKAWAYTAB_APP_URI="{{ASKAWAYTAB_APP_URI}}"
 NumberOfActiveAMASessions=1
 BackgroundJobUri="http://localhost:7071/api/background-Job"
 BackgroundFunctionKey=""
