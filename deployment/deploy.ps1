@@ -505,7 +505,7 @@ function DeployARMTemplate {
         $deploymentOutput = az deployment group show --name azuredeploy --resource-group $parameters.resourceGroupName.Value --subscription $parameters.subscriptionId.Value | ConvertFrom-Json
 
         # Sync only in upgrades & if no source branch conflict detected
-        if($parameters.isUpgrade.Value -and (-not $codeSynced)){
+        if(($parameters.isUpgrade.Value -eq $true) -and (-not $codeSynced)){
             # sync app services code deployment (ARM deployment will not sync automatically)
             foreach ($appService in $appServicesNames) {
                 WriteI -message "Sync $appService code from latest version"
