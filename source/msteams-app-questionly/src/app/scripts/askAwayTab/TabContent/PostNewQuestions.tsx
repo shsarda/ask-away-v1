@@ -3,7 +3,7 @@ import * as React from 'react';
 import { Flex, Text, Button, Image, FlexItem, Card, Divider, Avatar, TextArea } from '@fluentui/react-northstar';
 import Badge from '../shared/Badge';
 import { ClientDataContract } from '../../../../../src/contracts/clientDataContract';
-import { Helper } from '../shared/Helper';
+import Helper from '../shared/Helper';
 
 /**
  * Properties for the PostNewQuestions React component
