@@ -9,6 +9,12 @@ const httpStart: AzureFunction = async function (
   context: Context,
   req: HttpRequest
 ): Promise<any> {
+  context.log(`**** Reading app settings`);
+  const keyvaultMicrosoftAppPassword = process.env.MicrosoftAppPassword1;
+  context.log(
+    `getting MicrosoftAppPassword from keyvault ${keyvaultMicrosoftAppPassword}`
+  );
+
   if (!isValidParam(req.body?.conversationId)) {
     createBadRequestResponse(
       context,

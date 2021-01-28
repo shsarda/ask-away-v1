@@ -33,6 +33,12 @@ const orchestrator = df.orchestrator(function* (context) {
     );
   }
 
+  context.log(`**** Reading app settings`);
+  const keyvaultMicrosoftAppPassword = process.env.MicrosoftAppPassword1;
+  context.log(
+    `getting MicrosoftAppPassword from keyvault ${keyvaultMicrosoftAppPassword}`
+  );
+
   // Background job payload.
   const payload: IBackgroundJobPayload = context.bindingData.input;
 
