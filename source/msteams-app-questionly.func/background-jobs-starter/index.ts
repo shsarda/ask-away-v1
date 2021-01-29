@@ -10,10 +10,20 @@ const httpStart: AzureFunction = async function (
   req: HttpRequest
 ): Promise<any> {
   context.log(`**** Reading app settings`);
-  const keyvaultMicrosoftAppPassword = process.env.MicrosoftAppPassword1;
   context.log(
-    `getting MicrosoftAppPassword from keyvault ${keyvaultMicrosoftAppPassword}`
+    `getting MicrosoftAppPassword from keyvault ${process.env.MicrosoftAppPassword}`
   );
+  context.log(
+    `getting AzureWebJobsStorage from keyvault ${process.env.AzureWebJobsStorage}`
+  );
+  context.log(
+    `getting APPINSIGHTS_INSTRUMENTATIONKEY from keyvault ${process.env.APPINSIGHTS_INSTRUMENTATIONKEY}`
+  );
+  context.log(`getting MongoDbUri from keyvault ${process.env.MongoDbUri}`);
+  context.log(
+    `getting AzureSignalRConnectionString from keyvault ${process.env.AzureSignalRConnectionString}`
+  );
+  context.log(`getting AvatarKey from keyvault ${process.env.AvatarKey}`);
 
   if (!isValidParam(req.body?.conversationId)) {
     createBadRequestResponse(
