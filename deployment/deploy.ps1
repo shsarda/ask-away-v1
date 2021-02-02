@@ -313,8 +313,6 @@ function CreateAzureADApp {
 
         WriteS -message "Azure AD App: $appName registered successfully."
 
-        WriteS -message "Azure AD App secret: $appSecret"
-
         return $appSecret
     }
     catch {
