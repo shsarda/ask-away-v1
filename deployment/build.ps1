@@ -56,11 +56,11 @@ npm run-script build
 # Remove .cache from node modules
 Remove-Item -r  .\node_modules\.cache\
 
-Set-Location -Path ..\..\..\
+Set-Location -Path ..\
 
 # create archive of web app
 $compress = @{
-    Path= "ask-away-v1"
+    Path= "msteams-app-questionly"
     CompressionLevel = "Fastest"
     DestinationPath = "webApp.zip"
 }

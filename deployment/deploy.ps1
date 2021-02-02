@@ -649,8 +649,9 @@ function ADAppUpdate {
 
     # Expose an API
     $appId = $app.AppId
+    $appIDUri = "$IdentifierUris/$appId"
 
-    az ad app update --id $configAppId --identifier-uris $IdentifierUris
+    az ad app update --id $configAppId --identifier-uris $appIDUri
     WriteI -message "App URI set"
                     
     # Create access_as_user scope

@@ -97,7 +97,7 @@ export const startQnASession = async (sessionParameters: {
         sessionTitle: sessionParameters.title,
     });
 
-    await triggerBackgroundJobForQnaSessionCreatedEvent(response, sessionParameters.serviceUrl, sessionParameters.meetingId);
+    await triggerBackgroundJobForQnaSessionCreatedEvent(response, sessionParameters.serviceUrl, sessionParameters.userAadObjectId, sessionParameters.meetingId);
 
     return response;
 };

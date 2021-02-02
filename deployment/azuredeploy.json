@@ -102,13 +102,6 @@
       "metadata": {
         "description": "The branch of the GitHub repository to deploy."
       }
-    },
-    "updateKeyvaultTemplateUrl": {
-      "type": "string",
-      "defaultValue": "https://raw.githubusercontent.com/shsarda/ask-away/master/deployment/update-keyvault.json",
-      "metadata": {
-        "description": "The url of update-keyvault.json template."
-      }
     }
   },
   "variables": {
@@ -392,6 +385,10 @@
             {
               "name": "ApplicationInsightsInstrumentationKey",
               "value": "[reference(resourceId('Microsoft.Insights/components/', variables('botAppInsightsName')), '2015-05-01').InstrumentationKey]"
+            },
+            {
+              "name": "IdentityObjectId_AppService",
+              "value": "[reference(resourceId('Microsoft.Web/sites', variables('botAppName')), '2016-08-01', 'Full').identity.principalId]"
             }
           ],
           "cors": {
@@ -721,37 +718,6 @@
       }
     },
     {
-      "type": "Microsoft.Resources/deployments",
-      "name": "updateKeyvault",
-      "apiVersion": "2015-01-01",
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('keyvaultName'))]",
-        "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
-        "[resourceId('Microsoft.Web/sites/sourcecontrols', variables('functionAppName'), 'web')]"
-      ],
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[parameters('updateKeyvaultTemplateUrl')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "keyvaultName": {
-            "value": "[variables('keyvaultName')]"
-          },
-          "functionAppName": {
-            "value": "[variables('functionAppName')]"
-          },
-          "backgroundFunctionName": {
-            "value": "background-jobs-starter"
-          },
-          "location": {
-            "value": "[parameters('location')]"
-          }
-        }
-      }
-    },
-    {
       "apiVersion": "2018-02-01",
       "type": "Microsoft.Web/sites",
       "name": "[variables('functionAppName')]",
@@ -882,6 +848,14 @@
             {
               "name": "AzureWebJobsSecretStorageType",
               "value": "Files"
+            },
+            {
+              "name": "ExpireInMemorySecretsAfterMs",
+              "value": "86400000"
+            },
+            {
+              "name": "IdentityObjectId_AppService",
+              "value": "[reference(resourceId('Microsoft.Web/sites', variables('botAppName')), '2016-08-01', 'Full').identity.principalId]"
             }
           ],
           "cors": {
