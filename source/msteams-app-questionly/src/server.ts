@@ -13,7 +13,7 @@ dotenvConfig();
 
 // The import of components has to be done AFTER the dotenv config.
 import { exceptionLogger, initiateAIClient } from 'src/util/exceptionTracking';
-import { ConversationDataService, IConversationDataService, initiateConnection } from 'msteams-app-questionly.data';
+import { ConversationDataService, initiateConnection, UserDataService, QuestionDataService, QnASessionDataService } from 'msteams-app-questionly.data';
 import { getMongoURI, initKeyVault } from 'src/util/keyvault';
 import { setupBot } from 'src/util/setupBot';
 import { setupClientApp } from 'src/util/setupClientApp';
@@ -21,8 +21,9 @@ import { setupRestApis } from 'src/util/setupRestApis';
 import { initBackgroundJobSetup } from 'src/background-job/backgroundJobTrigger';
 import { initLocalization } from 'src/localization/locale';
 import { setupWebServerApp, startWebServer } from 'src/util/webServerUtility';
-import { TelemetryExceptions } from './constants/telemetryConstants';
-import { DefaultAzureCredential } from '@azure/identity';
+import { TelemetryExceptions } from 'src/constants/telemetryConstants';
+import { ClientDataContractFormatter } from 'src/util/clientDataContractFormatter';
+import { Controller } from 'src/controller';
 
 /**
  * Establishes DB connection.
@@ -51,26 +52,6 @@ async function initializeSupportingModules() {
 
     // Establish db connection.
     await setupDBConection();
-
-    await getJWTToken();
-}
-
-async function getJWTToken() {
-    const defaultAzureCredential = new DefaultAzureCredential();
-    const accessToken = await defaultAzureCredential.getToken(
-        'https://management.azure.com/.default'
-      );
-    
-    if (accessToken) {
-        console.log("*** access token token : " + accessToken.token);
-        exceptionLogger(new Error(`*** access token token : ${accessToken.token}`));
-        const jsonAccessToken = JSON.stringify(accessToken)
-        console.log("*** access token : " + jsonAccessToken);
-        exceptionLogger(new Error(`*** access token : ${jsonAccessToken}`));
-    } else {
-        console.log("*** access token token : null ");
-        exceptionLogger(new Error(`*** access token token : null`));
-    }
 }
 
 /**
@@ -78,15 +59,20 @@ async function getJWTToken() {
  * @param express - express app.
  */
 async function setupRoutes(express: ExpressType) {
-    const conversationDataService: IConversationDataService = new ConversationDataService();
+    const conversationDataService = new ConversationDataService();
+    const userDataService = new UserDataService();
+    const qnaSessionDataService = new QnASessionDataService(userDataService);
+    const questionDataService = new QuestionDataService(userDataService, qnaSessionDataService);
+    const clientDataContractFormatter = new ClientDataContractFormatter(userDataService, questionDataService);
+    const controller = new Controller(questionDataService, qnaSessionDataService);
     // Setup bot.
-    await setupBot(express, conversationDataService);
+    await setupBot(express, conversationDataService, controller);
 
     // Setup client app.
     setupClientApp(express);
 
     // Setup rest apis.
-    setupRestApis(express, conversationDataService);
+    setupRestApis(express, conversationDataService, qnaSessionDataService, clientDataContractFormatter, controller);
 }
 
 /**

@@ -399,22 +399,6 @@
         "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "[resourceId('Microsoft.Insights/components', variables('botAppInsightsName'))]",
         "[resourceId('Microsoft.DocumentDb/databaseAccounts', variables('cosmosDbName'))]"
-      ],
-      "resources": [
-        {
-          "apiVersion": "2018-11-01",
-          "name": "web",
-          "type": "sourcecontrols",
-          "condition": "[not(empty(parameters('gitRepoUrl')))]",
-          "dependsOn": [
-            "[resourceId('Microsoft.Web/sites', variables('botAppName'))]"
-          ],
-          "properties": {
-            "RepoUrl": "[parameters('gitRepoUrl')]",
-            "branch": "[parameters('gitBranch')]",
-            "IsManualIntegration": true
-          }
-        }
       ]
     },
     {
@@ -722,24 +706,7 @@
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
         "[resourceId('Microsoft.Insights/components', variables('botAppInsightsName'))]",
-        "[resourceId('Microsoft.Web/sites', variables('botAppName'))]",
-        "[resourceId('Microsoft.Web/sites/sourcecontrols', variables('botAppName'), 'web')]"
-      ],
-      "resources": [
-        {
-          "apiVersion": "2018-11-01",
-          "name": "web",
-          "type": "sourcecontrols",
-          "condition": "[not(empty(parameters('gitRepoUrl')))]",
-          "dependsOn": [
-            "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]"
-          ],
-          "properties": {
-            "RepoUrl": "[parameters('gitRepoUrl')]",
-            "branch": "[parameters('gitBranch')]",
-            "IsManualIntegration": true
-          }
-        }
+        "[resourceId('Microsoft.Web/sites', variables('botAppName'))]"
       ],
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
