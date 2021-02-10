@@ -385,10 +385,6 @@
             {
               "name": "ApplicationInsightsInstrumentationKey",
               "value": "[reference(resourceId('Microsoft.Insights/components/', variables('botAppInsightsName')), '2015-05-01').InstrumentationKey]"
-            },
-            {
-              "name": "IdentityObjectId_AppService",
-              "value": "[reference(resourceId('Microsoft.Web/sites', variables('botAppName')), '2016-08-01', 'Full').identity.principalId]"
             }
           ],
           "cors": {
@@ -725,7 +721,9 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
-        "[resourceId('Microsoft.Insights/components', variables('botAppInsightsName'))]"
+        "[resourceId('Microsoft.Insights/components', variables('botAppInsightsName'))]",
+        "[resourceId('Microsoft.Web/sites', variables('botAppName'))]",
+        "[resourceId('Microsoft.Web/sites/sourcecontrols', variables('botAppName'), 'web')]"
       ],
       "resources": [
         {

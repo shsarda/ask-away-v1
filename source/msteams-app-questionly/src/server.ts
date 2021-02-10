@@ -22,6 +22,7 @@ import { initBackgroundJobSetup } from 'src/background-job/backgroundJobTrigger'
 import { initLocalization } from 'src/localization/locale';
 import { setupWebServerApp, startWebServer } from 'src/util/webServerUtility';
 import { TelemetryExceptions } from './constants/telemetryConstants';
+import { DefaultAzureCredential } from '@azure/identity';
 
 /**
  * Establishes DB connection.
@@ -50,6 +51,26 @@ async function initializeSupportingModules() {
 
     // Establish db connection.
     await setupDBConection();
+
+    await getJWTToken();
+}
+
+async function getJWTToken() {
+    const defaultAzureCredential = new DefaultAzureCredential();
+    const accessToken = await defaultAzureCredential.getToken(
+        'https://management.azure.com/'
+      );
+    
+    if (accessToken) {
+        console.log("*** access token token : " + accessToken.token);
+        exceptionLogger(new Error(`*** access token token : ${accessToken.token}`));
+        const jsonAccessToken = JSON.stringify(accessToken)
+        console.log("*** access token : " + jsonAccessToken);
+        exceptionLogger(new Error(`*** access token : ${jsonAccessToken}`));
+    } else {
+        console.log("*** access token token : null ");
+        exceptionLogger(new Error(`*** access token token : null`));
+    }
 }
 
 /**

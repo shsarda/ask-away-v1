@@ -22,8 +22,7 @@
     "MaxWaitTimeForAdaptiveCardRefreshInMs": 5000,
     "AvatarKey": "{{AvatarKey}}",
     "HostName": "{{HostName}}",
-    "ExpireInMemorySecretsAfterMs": "{{ExpireInMemorySecretsAfterMs}}",
-    "IdentityObjectId_AppService": "{{IdentityObjectId_AppService}}"
+    "ExpireInMemorySecretsAfterMs": "{{ExpireInMemorySecretsAfterMs}}"
   },
   "Host": {
     "LocalHttpPort": 7071,

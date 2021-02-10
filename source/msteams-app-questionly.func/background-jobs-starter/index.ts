@@ -1,57 +1,14 @@
 ﻿import * as df from "durable-functions";
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-import {
-  createBadRequestResponse,
-  createUnauthorizedErrorResponse,
-} from "../src/utils/responseUtility";
+import { createBadRequestResponse } from "../src/utils/responseUtility";
 import { isValidParam } from "../src/utils/requestUtility";
 import { errorStrings } from "../src/constants/errorStrings";
 import { initiateDBConnection } from "../src/utils/dbUtility";
-import * as jwt from "jsonwebtoken";
-import { getAvatarKey } from "../src/utils/keyvaultUtility";
-import { exceptionLogger } from "../src/utils/exceptionTracking";
-
-interface AvatarRequest {
-  objectId: string;
-  index: number;
-}
 
 const httpStart: AzureFunction = async function (
   context: Context,
   req: HttpRequest
 ): Promise<any> {
-  const avatarKey = getAvatarKey();
-  const operationId: string = req.body?.operationId;
-
-  let token = req.headers.authorization;
-  if (!isValidParam(token) || !token.startsWith("Bearer")) {
-    exceptionLogger(
-      new Error("Access token is missing/invalid in the request."),
-      operationId,
-      {
-        filename: module.id,
-      }
-    );
-    createUnauthorizedErrorResponse(context);
-    return context.res;
-  }
-  token = token.replace("Bearer", "").trim();
-
-  // verify jwt token received from service app.
-  jwt.verify(
-    token,
-    Buffer.from(avatarKey, "utf8").toString("hex"),
-    (err, data: AvatarRequest) => {
-      if (err || data.objectId !== process.env.IdentityObjectId_AppService) {
-        exceptionLogger(new Error("Invalid access token."), operationId, {
-          filename: module.id,
-        });
-        createUnauthorizedErrorResponse(context);
-        return context.res;
-      }
-    }
-  );
-
   if (!isValidParam(req.body?.conversationId)) {
     createBadRequestResponse(
       context,
