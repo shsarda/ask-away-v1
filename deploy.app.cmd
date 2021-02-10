@@ -168,7 +168,7 @@ IF DEFINED DEPLOYMENT_SOURCE_WEB (
 :: 9. Build main web project
 IF EXIST "%DEPLOYMENT_SOURCE_WEB%\package.json" (
   pushd "%DEPLOYMENT_SOURCE_WEB%"
-  set NODE_OPTIONS=--max_old_space_size=4096
+  set NODE_OPTIONS=--max_old_space_size=3000
   call :ExecuteCmd !NPM_CMD! run-script build
   IF !ERRORLEVEL! NEQ 0 goto error
   popd
