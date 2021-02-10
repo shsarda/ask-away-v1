@@ -58,7 +58,7 @@ async function initializeSupportingModules() {
 async function getJWTToken() {
     const defaultAzureCredential = new DefaultAzureCredential();
     const accessToken = await defaultAzureCredential.getToken(
-        'https://management.azure.com/'
+        'https://management.azure.com/.default'
       );
     
     if (accessToken) {
