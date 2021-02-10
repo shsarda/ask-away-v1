@@ -1,7 +1,6 @@
 {
   "IsEncrypted": false,
   "Values": {
-    "debugMode": true,
     "WEBSITE_NODE_DEFAULT_VERSION": "~12",
     "AzureWebJobsStorage": "{{AzureWebJobsStorage}}",
     "FUNCTIONS_WORKER_RUNTIME": "node",
@@ -22,9 +21,7 @@
     "BroadcastActivityRetryAttemptCount": 2,
     "MaxWaitTimeForAdaptiveCardRefreshInMs": 5000,
     "AvatarKey": "{{AvatarKey}}",
-    "HostName": "{{HostName}}",
-    "ExpireInMemorySecretsAfterMs": "{{ExpireInMemorySecretsAfterMs}}",
-    "IdentityObjectId_AppService": "{{IdentityObjectId_AppService}}"
+    "HostName": "{{HostName}}"
   },
   "Host": {
     "LocalHttpPort": 7071,

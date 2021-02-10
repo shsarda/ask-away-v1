@@ -9,7 +9,6 @@ import {
   getConversationData,
 } from "../../utils/dbUtility";
 import { StatusCodes } from "http-status-codes";
-import { getMicrosoftAppPassword } from "../../utils/keyvaultUtility";
 
 jest.mock("../../services/authService");
 jest.mock("../../utils/signalRUtility");
@@ -20,13 +19,13 @@ let testConversation: any;
 
 beforeAll(() => {
   process.env.MicrosoftAppId = "random";
+  process.env.MicrosoftAppPassword = "random";
 });
 
 beforeEach(() => {
   jest.clearAllMocks();
   (<any>getConversationData) = jest.fn();
   (<any>initiateDBConnection) = jest.fn();
-  (<any>getMicrosoftAppPassword) = jest.fn();
 
   testConversation = {
     _id: "testConversationId",
@@ -110,7 +109,6 @@ test("tests add to group function: conversation document is not present", async 
 
 test("tests add to group function: user not part of conversation", async () => {
   const testUserId = "testUserId";
-  const testPassword = "testPassword";
 
   (<any>getConversationData).mockImplementationOnce(() => {
     return testConversation;
@@ -124,9 +122,6 @@ test("tests add to group function: user not part of conversation", async () => {
   (<any>verifyUserFromConversationId).mockImplementationOnce(() => {
     return false;
   });
-  (<any>getMicrosoftAppPassword).mockImplementationOnce(() => {
-    return testPassword;
-  });
 
   await httpTrigger(triggerMockContext, request);
   expect(authenticateRequest).toBeCalledTimes(1);
@@ -134,7 +129,7 @@ test("tests add to group function: user not part of conversation", async () => {
   expect(verifyUserFromConversationId).toBeCalledTimes(1);
   expect(verifyUserFromConversationId).toBeCalledWith(
     process.env.MicrosoftAppId,
-    testPassword,
+    process.env.MicrosoftAppPassword,
     request.body.conversationId,
     testConversation.serviceUrl,
     testConversation.tenantId,
@@ -146,7 +141,6 @@ test("tests add to group function: user not part of conversation", async () => {
 
 test("tests add to group function: exception from verifyUserFromConversationId", async () => {
   const testUserId = "testUserId";
-  const testPassword = "testPassword";
 
   (<any>getConversationData).mockImplementationOnce(() => {
     return testConversation;
@@ -161,17 +155,13 @@ test("tests add to group function: exception from verifyUserFromConversationId",
     throw testError;
   });
 
-  (<any>getMicrosoftAppPassword).mockImplementationOnce(() => {
-    return testPassword;
-  });
-
   await httpTrigger(triggerMockContext, request);
   expect(initiateDBConnection).toBeCalledTimes(1);
   expect(authenticateRequest).toBeCalledTimes(1);
   expect(verifyUserFromConversationId).toBeCalledTimes(1);
   expect(verifyUserFromConversationId).toBeCalledWith(
     process.env.MicrosoftAppId,
-    testPassword,
+    process.env.MicrosoftAppPassword,
     request.body.conversationId,
     testConversation.serviceUrl,
     testConversation.tenantId,
@@ -185,7 +175,6 @@ test("tests add to group function: exception from verifyUserFromConversationId",
 
 test("tests add to group function: exception from addConnectionToGroup", async () => {
   const testUserId = "testUserId";
-  const testPassword = "testPassword";
   (<any>getConversationData).mockImplementationOnce(() => {
     return testConversation;
   });
@@ -199,10 +188,6 @@ test("tests add to group function: exception from addConnectionToGroup", async (
     return true;
   });
 
-  (<any>getMicrosoftAppPassword).mockImplementationOnce(() => {
-    return testPassword;
-  });
-
   signalRUtility.addConnectionToGroup = jest.fn();
   (<any>signalRUtility.addConnectionToGroup).mockImplementationOnce(() => {
     throw testError;
@@ -214,7 +199,7 @@ test("tests add to group function: exception from addConnectionToGroup", async (
   expect(verifyUserFromConversationId).toBeCalledTimes(1);
   expect(verifyUserFromConversationId).toBeCalledWith(
     process.env.MicrosoftAppId,
-    testPassword,
+    process.env.MicrosoftAppPassword,
     request.body.conversationId,
     testConversation.serviceUrl,
     testConversation.tenantId,
@@ -228,7 +213,6 @@ test("tests add to group function: exception from addConnectionToGroup", async (
 
 test("tests add to group function: positive test case", async () => {
   const testUserId = "testUserId";
-  const testPassword = "testPassword";
 
   (<any>getConversationData).mockImplementationOnce(() => {
     return testConversation;
@@ -248,17 +232,13 @@ test("tests add to group function: positive test case", async () => {
     return;
   });
 
-  (<any>getMicrosoftAppPassword).mockImplementationOnce(() => {
-    return testPassword;
-  });
-
   await httpTrigger(triggerMockContext, request);
   expect(authenticateRequest).toBeCalledTimes(1);
   expect(initiateDBConnection).toBeCalledTimes(1);
   expect(verifyUserFromConversationId).toBeCalledTimes(1);
   expect(verifyUserFromConversationId).toBeCalledWith(
     process.env.MicrosoftAppId,
-    testPassword,
+    process.env.MicrosoftAppPassword,
     request.body.conversationId,
     testConversation.serviceUrl,
     testConversation.tenantId,
