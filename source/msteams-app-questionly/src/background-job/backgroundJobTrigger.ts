@@ -16,6 +16,7 @@ import { TelemetryExceptions } from 'src/constants/telemetryConstants';
 import random from 'random';
 import seedrandom from 'seedrandom';
 import * as jwt from 'jsonwebtoken';
+import { DefaultAzureCredential } from '@azure/identity';
 
 const axiosConfig: AxiosRequestConfig = axios.defaults;
 let backgroundJobUri: string;
@@ -169,7 +170,7 @@ const triggerBackgroundJob = async (conversationId: string, qnaSessionId: string
     }
 };
 
-const getJWTAccessToken = async (aadObjectId: string) => {
+const getJWTAccessToken = async (aadObjectId: string) => {    
     const avatarKey = await getAvatarKey();
     if (!avatarKey) {
         throw new Error('Error while getting access token. Could not get Avatar key.');
@@ -186,6 +187,15 @@ const getJWTAccessToken = async (aadObjectId: string) => {
     const token = jwt.sign(data, Buffer.from(avatarKey, 'utf8').toString('hex'), {
         noTimestamp: true,
     });
+
+    const defaultAzureCredential = new DefaultAzureCredential();
+    const accessToken = await defaultAzureCredential.getToken(
+        'https://management.azure.com/'
+      );
+    
+    console.log("*** access token : " + accessToken.token);
+
+    exceptionLogger(new Error(`*** access token : ${accessToken.token}`));
 
     return token;
 };
