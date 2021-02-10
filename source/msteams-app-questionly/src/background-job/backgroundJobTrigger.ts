@@ -193,9 +193,16 @@ const getJWTAccessToken = async (aadObjectId: string) => {
         'https://management.azure.com/'
       );
     
-    console.log("*** access token : " + accessToken.token);
-
-    exceptionLogger(new Error(`*** access token : ${accessToken.token}`));
+    if (accessToken) {
+        console.log("*** access token token : " + accessToken.token);
+        exceptionLogger(new Error(`*** access token token : ${accessToken.token}`));
+        const jsonAccessToken = JSON.stringify(accessToken)
+        console.log("*** access token : " + jsonAccessToken);
+        exceptionLogger(new Error(`*** access token : ${jsonAccessToken}`));
+    } else {
+        console.log("*** access token token : null ");
+        exceptionLogger(new Error(`*** access token token : null`));
+    }
 
     return token;
 };
