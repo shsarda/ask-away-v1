@@ -4,7 +4,6 @@ import { getApplicationInsightsInstrumentationKeyURI } from 'src/util/keyvault';
 declare var jest : any | null;
 export let aiClient: appInsights.TelemetryClient | null = null;
 
-
 export const initiateAppInsights = async () => {
     const applicationInsightsInstrumentationKey = await getApplicationInsightsInstrumentationKeyURI();
 

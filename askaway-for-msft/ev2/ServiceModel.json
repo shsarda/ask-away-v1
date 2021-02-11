@@ -1,0 +1,39 @@
+{
+    "$schema": "https://ev2schema.azure.net/schemas/2020-01-01/serviceModel.json",
+    "serviceMetadata": {
+        "serviceGroup": "AskAwayForMSFT",
+        "environment": ""
+    },
+    "serviceResourceGroupDefinitions": [
+        {
+            "name": "AskAway",
+            "serviceResourceDefinitions": [
+                {
+                    "name": "AskAwayService",
+                    "composedOf": {
+                        "arm": {
+                            "templatePath": "Templates\\ArmTemplate.json",
+                            "parametersPath": "Parameters\\ArmParameters.json"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "serviceResourceGroups": [
+        {
+            "azureResourceGroupName": "",
+            "location": "West US2",
+            "instanceOf": "AskAway",
+            "azureSubscriptionId": "",
+            "scopeTags": [],
+            "serviceResources": [
+                {
+                    "name": "AskAwayGlobal",
+                    "instanceOf": "AskAwayService",
+                    "scopeTags": []
+                }
+            ]
+        }
+    ]
+}

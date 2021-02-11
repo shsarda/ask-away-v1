@@ -1,0 +1,26 @@
+{
+    "$schema": "https://ev2schema.azure.net/schemas/2020-01-01/rolloutSpecification.json",
+    "rolloutMetadata": {
+        "serviceModelPath": "ServiceModel.json",
+        "name": "AskAway WebApp",
+        "rolloutType": "Major",
+        "buildSource": {
+            "parameters": {
+                "versionFile": "Version/version.txt"
+            }
+        },
+        "notification": {
+            "email": {
+                "to": "nibeauli@microsoft.com"
+            }
+        }
+    },
+    "orchestratedsteps": [
+        {
+            "name": "Global",
+            "targetType": "ServiceResource",
+            "targetName": "AskAwayGlobal",
+            "actions": ["Deploy"]
+        }
+    ]
+}

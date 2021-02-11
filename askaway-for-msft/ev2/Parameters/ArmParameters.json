@@ -1,0 +1,35 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "paths": [
+        {
+            "parameterReference": "servicePackageLink"
+        }
+    ],
+    "parameters": {
+        "baseResourceName": {
+            "value": ""
+        },
+        "botClientId": {
+            "value": ""
+        },
+        "botClientSecret": {
+            "value": ""
+        },
+        "tenantId": {
+            "value": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+        },
+        "allowedTenantId": {
+            "value": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+        },
+        "servicePackageLink": {
+            "value": "bin\\AskAway.zip"
+        },
+        "autoCloseInDays": {
+            "value": "20"
+        },
+        "autoDeleteInDays": {
+            "value": "25"
+        }
+    }
+}

@@ -22,6 +22,7 @@ export interface AskQuestion {
 export interface EndQnA {
     taskModuleTitle: string;
     prompt: string;
+    sessionDeletionDetails: string;
 }
 
 export interface Errors {
@@ -30,8 +31,10 @@ export interface Errors {
     missingFields: string;
     taskFetch: string;
     taskSubmit: string;
+    expired: string;
     leaderboard: string;
     conversationInvalid: string;
+    autoEnded: string;
 }
 
 export interface Generic {
@@ -76,6 +79,7 @@ export interface StartQnA {
     descriptionFieldExample: string;
     taskModuleTitle: string;
     taskModuleTitleEdit: string;
+    additionalInfo: string;
 }
 
 export const initLocalization = async (
@@ -137,22 +141,22 @@ export const leaderboardStrings = (string: keyof Leaderboard) => {
     return i18next.t(`leaderboard.${string}`);
 };
 
-export const startQnAStrings = (string: keyof StartQnA) => {
-    return i18next.t(`startQnA.${string}`);
+export const startQnAStrings = (string: keyof StartQnA, params = {}) => {
+    return i18next.t(`startQnA.${string}`, params);
 };
 
-export const endQnAStrings = (string: keyof EndQnA) => {
-    return i18next.t(`endQnA.${string}`);
+export const endQnAStrings = (string: keyof EndQnA, params = {}) => {
+    return i18next.t(`endQnA.${string}`, params);
 };
 
 export const askQuestionStrings = (string: keyof AskQuestion) => {
     return i18next.t(`askQuestion.${string}`);
 };
 
-export const genericStrings = (string: keyof Generic) => {
-    return i18next.t(`generic.${string}`);
+export const genericStrings = (string: keyof Generic, params = {}) => {
+    return i18next.t(`generic.${string}`, params);
 };
 
-export const errorStrings = (string: keyof Errors) => {
-    return i18next.t(`errors.${string}`);
+export const errorStrings = (string: keyof Errors, params = {}) => {
+    return i18next.t(`errors.${string}`, params);
 };

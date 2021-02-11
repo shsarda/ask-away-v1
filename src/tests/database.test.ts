@@ -82,10 +82,10 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-    await QnASession.remove({ _id: testQnASession._id });
-    await User.remove({ _id: testHost._id });
-    await User.remove({ _id: testUser._id });
-    await User.remove({ _id: testUserUpvoting._id });
+    await QnASession.deleteOne({ _id: testQnASession._id });
+    await User.deleteOne({ _id: testHost._id });
+    await User.deleteOne({ _id: testUser._id });
+    await User.deleteOne({ _id: testUserUpvoting._id });
 });
 
 afterAll(async () => {
@@ -203,8 +203,8 @@ test('retrieve question data in non-empty QnA', async () => {
     expect(questionData[0]._id).toEqual(questions[0]._id);
     expect(questionData[1]._id).toEqual(questions[1]._id);
 
-    await Question.remove({ _id: questionData[0]._id });
-    await Question.remove({ _id: questionData[1]._id });
+    await Question.deleteOne({ _id: questionData[0]._id });
+    await Question.deleteOne({ _id: questionData[1]._id });
 });
 
 test('create new user', async () => {
@@ -278,8 +278,8 @@ test('upvote question that has not been upvoted yet with existing user', async (
 
     expect(questionUpvoted.voters).toContain(testUserUpvoting._id);
 
-    await Question.remove(questionUpvoted);
-    await User.remove(testUserUpvoting);
+    await Question.findByIdAndDelete(questionUpvoted._id);
+    await User.findByIdAndDelete(testUserUpvoting._id);
 });
 
 test('upvote question that has already been upvoted with existing user', async () => {
@@ -314,8 +314,8 @@ test('upvote question that has already been upvoted with existing user', async (
         ).length
     ).toEqual(0);
 
-    await Question.remove(questionUpvoted);
-    await User.remove(testUserUpvoting);
+    await Question.findByIdAndDelete(questionUpvoted._id);
+    await User.findByIdAndDelete(testUserUpvoting._id);
 });
 
 test('upvote question with new user not in database', async () => {
@@ -336,8 +336,8 @@ test('upvote question with new user not in database', async () => {
 
     expect(questionUpvoted.voters).toContain('134679');
 
-    await Question.remove(questionUpvoted);
-    await User.remove(testUserUpvoting);
+    await Question.findByIdAndDelete(questionUpvoted._id);
+    await User.findByIdAndDelete(testUserUpvoting._id);
 });
 
 test('ending non-existing qna', async () => {

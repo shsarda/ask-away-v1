@@ -3,7 +3,7 @@
         "updated": "Last updated",
         "initiatedBy": "started an Ask Away session",
         "endedBy": "ended the Ask Away session",
-        "topQuestions": "Questions",
+        "topQuestions": "Top Questions",
         "upvotes": "Upvotes",
         "askQuestion": "Ask a question",
         "upvoteQuestions": "Upvote questions",
@@ -23,16 +23,18 @@
         "refresh": "Refresh"
     },
     "startQnA": {
-        "titleFieldLabel": "Title of Q & A",
-        "titleFieldExample": "Ex. Weekly Product QnA",
+        "titleFieldLabel": "Title of Q&A",
+        "titleFieldExample": "Ex. Weekly Product Q&A",
         "descriptionFieldLabel": "Message",
-        "descriptionFieldExample": "Ex. Please submit and upvote quesions for the CEO!",
+        "descriptionFieldExample": "Ex. Please submit and upvote questions for the CEO!",
         "taskModuleTitle": "Start session to gather questions",
-        "taskModuleTitleEdit": "Edit Details"
+        "taskModuleTitleEdit": "Edit Details",
+        "additionalInfo": "Q&A sessions will automatically end {{autoCloseInDays}} days from creation, after which users will no longer be able to ask questions. Q&A sessions will be deleted completely after {{autoDeleteInDays}} days due to data privacy requirements."
     },
     "endQnA": {
         "taskModuleTitle": "End session",
-        "prompt": "Are you sure you want to stop gathering questions?"
+        "prompt": "Are you sure you want to stop gathering questions?",
+        "sessionDeletionDetails": "Ask Away session data will be deleted {{autoDeleteInDays}} days after the session is ended."
     },
     "askQuestion": {
         "textFieldExample": "Type a question",
@@ -46,8 +48,10 @@
         "missingFields": "Fields cannot be empty",
         "taskFetch": "Something went wrong. Please try opening again.",
         "taskSubmit": "Your submission encountered an error. Please try submitting again!",
+        "expired": "This Q&A has ended and questions have been deleted since it has been over {{autoDeleteInDays}} days since it was created.",
         "leaderboard": "Could not retrieve leaderboard. Please try again",
-        "conversationInvalid": "Requests pertaining to a QnA must be made in the same conversation the QnA is in."
+        "conversationInvalid": "Requests pertaining to a Q&A must be made in the same conversation the Q&A is in.",
+        "autoEnded": "This Q&A has ended because it has been over {{autoCloseInDays}} days since it was created."
     },
     "generic": {
         "submit": "Submit",

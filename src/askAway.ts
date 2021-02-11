@@ -205,6 +205,27 @@ export class AskAway extends TeamsActivityHandler {
                 <put the qnaSessionId here>
         }
         ================================================================================================================================*/
+        const autoEndDays = Number(process.env.AutoCloseInDays ?? '-1');
+        const isValid = await controller.validateSessionExpiration(taskModuleRequest.data.qnaSessionId, autoEndDays);
+        
+        if (isValid.isOk() && !isValid.value) {
+            var result = await controller.getUpdatedMainCard(taskModuleRequest.data.qnaSessionId, true);
+            if (result.isErr()) {
+                return this._buildTaskModuleContinueResponse(
+                    controller.getErrorCard(errorStrings('conversationInvalid'))
+                );
+            } else {
+                await controller.endQnASession(taskModuleRequest.data.qnaSessionId, '', true);
+                await context.updateActivity({
+                    attachments: [CardFactory.adaptiveCard(result.value.card)],
+                    id: result.value.activityId,
+                    type: 'message',
+                });
+                return this._buildTaskModuleContinueResponse(
+                    controller.getErrorCard(errorStrings('autoEnded', {autoCloseInDays: autoEndDays}) )
+                );
+            }
+        }
 
         const leaderboard = await controller.generateLeaderboard(
             taskModuleRequest.data.qnaSessionId,
@@ -228,6 +249,27 @@ export class AskAway extends TeamsActivityHandler {
         context: TurnContext,
         taskModuleRequest: TaskModuleRequest
     ): Promise<TaskModuleResponse> {
+        const autoEndDays = Number(process.env.AutoCloseInDays ?? '-1');
+        const isValid = await controller.validateSessionExpiration(taskModuleRequest.data.qnaSessionId, autoEndDays);
+
+        if (isValid.isOk() && !isValid.value) {
+            var result = await controller.getUpdatedMainCard(taskModuleRequest.data.qnaSessionId, true);
+            if (result.isErr()) {
+                return this._buildTaskModuleContinueResponse(
+                    controller.getErrorCard(errorStrings('conversationInvalid'))
+                );
+            } else {
+                await controller.endQnASession(taskModuleRequest.data.qnaSessionId, '', true);
+                await context.updateActivity({
+                    attachments: [CardFactory.adaptiveCard(result.value.card)],
+                    id: result.value.activityId,
+                    type: 'message',
+                });
+                return this._buildTaskModuleContinueResponse(
+                    controller.getErrorCard(errorStrings('autoEnded', {autoCloseInDays: autoEndDays}) )
+                );
+            }
+        }
         return this._buildTaskModuleContinueResponse(
             controller.getNewQuestionCard(taskModuleRequest.data.qnaSessionId),
             askQuestionStrings('taskModuleTitle')
@@ -258,7 +300,7 @@ export class AskAway extends TeamsActivityHandler {
             return this._buildTaskModuleContinueResponse(
                 controller.getErrorCard(errorStrings('conversationInvalid'))
             );
-
+        
         const qnaSessionId = taskModuleRequest.data.qnaSessionId;
         const userAADObjId = <string>user.aadObjectId;
         const userName = user.name;
@@ -364,8 +406,11 @@ export class AskAway extends TeamsActivityHandler {
     }
 
     private handleTeamsTaskModuleSubmitError(): TaskModuleResponse {
+        const errorString = Number(process.env.AutoDeleteInDays ?? '-1') >= 0 
+                ? errorStrings('expired', {autoDeleteInDays: process.env.AutoDeleteInDays}) 
+                : errorStrings('taskSubmit');
         return this._buildTaskModuleContinueResponse(
-            controller.getErrorCard(errorStrings('taskSubmit'))
+            controller.getErrorCard(errorString)
         );
     }
 
@@ -654,9 +699,13 @@ export class AskAway extends TeamsActivityHandler {
                     )
                 );
         } else {
+            const errorString = Number(process.env.AutoDeleteInDays ?? '-1') >= 0 
+                ? errorStrings('expired', {autoDeleteInDays: process.env.AutoDeleteInDays}) 
+                : errorStrings('taskSubmit');
+            
             return err(
                 this._buildTaskModuleContinueResponse(
-                    controller.getErrorCard(errorStrings('taskSubmit'))
+                    controller.getErrorCard(errorString)
                 )
             );
         }

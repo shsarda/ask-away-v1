@@ -149,9 +149,10 @@ export const getMainCard = async (
 export const getStartQnACard = (
     title = '',
     description = '',
-    errorMessage = ''
+    errorMessage = '', 
+    ...cardParams: any[]
 ): AdaptiveCard => {
-    const template = new ACData.Template(startQnACard()).expand({
+    const template = new ACData.Template(startQnACard(...cardParams)).expand({
         $root: {
             title,
             description,
@@ -199,14 +200,11 @@ export const generateLeaderboard = async (
     const leaderboardTemplate = leaderboardCard();
 
     // Sort question data by oldest first
-    questionData = questionData
-        .sort((a: IQuestionPopulatedUser, b: IQuestionPopulatedUser) => {
-            return (
-                new Date(a.dateTimeCreated).getTime() -
-                new Date(b.dateTimeCreated).getTime()
-            );
-        })
-        .reverse();
+    questionData = questionData.sort(
+        (a: IQuestionPopulatedUser, b: IQuestionPopulatedUser) =>
+            new Date(a.dateTimeCreated).getTime() -
+            new Date(b.dateTimeCreated).getTime()
+    );
 
     questionData = await Promise.all(
         questionData.map(async (question) => {
@@ -312,9 +310,10 @@ export const _adaptiveCard = (template: IAdaptiveCard): AdaptiveCard => {
  * @returns Adaptive Card for confirming end of QnA
  */
 export const getEndQnAConfirmationCard = (
-    qnaSessionId: string
+    qnaSessionId: string, 
+    ...cardParams: any[]
 ): AdaptiveCard => {
-    const template = new ACData.Template(endQnAConfirmationCard()).expand({
+    const template = new ACData.Template(endQnAConfirmationCard(...cardParams)).expand({
         $root: {
             qnaId: qnaSessionId,
         },

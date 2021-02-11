@@ -1,0 +1,482 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "baseResourceName": {
+            "type": "string",
+            "minLength": 1,
+            "metadata": {
+                "description": "The base name to use for the resources that will be provisioned."
+            }
+        },
+        "botClientId": {
+            "type": "string",
+            "minLength": 36,
+            "maxLength": 36,
+            "metadata": {
+                "description": "The client ID of the bot Azure Active Directory app, e.g., 123e4567-e89b-12d3-a456-426655440000."
+            }
+        },
+        "botClientSecret": {
+            "type": "securestring",
+            "minLength": 1,
+            "metadata": {
+                "description": "The client secret of the bot Azure AD app."
+            }
+        },
+        "appDisplayName": {
+            "type": "string",
+            "minLength": 1,
+            "defaultValue": "AskAway",
+            "metadata": {
+                "description": "Application name."
+            }
+        },
+        "appDescription": {
+            "type": "string",
+            "minLength": 1,
+            "defaultValue": "Ask Away helps QnA hosts and attendees manage and interact with ​QnA sessions.",
+            "metadata": {
+                "description": "The description for the app."
+            }
+        },
+        "appIconUrl": {
+            "type": "string",
+            "minLength": 1,
+            "defaultValue": "https://raw.githubusercontent.com/OfficeDev/microsoft-teams-apps-askaway/master/Manifest/color.png",
+            "metadata": {
+                "description": "The link to the icon for the app. It must resolve to a PNG file."
+            }
+        },
+        "tenantId": {
+            "type": "string",
+            "defaultValue": "[subscription().tenantId]",
+            "minLength": 1,
+            "maxLength": 36,
+            "metadata": {
+                "description": "The ID of the tenant to which the app will be deployed."
+            }
+        },
+        "allowedTenantId": {
+            "type": "string",
+            "defaultValue": "",
+            "minLength": 1,
+            "maxLength": 36,
+            "metadata": {
+                "description": "The ID of the tenant which will be using the app."
+            }
+        },
+        "sku": {
+            "type": "string",
+            "allowedValues": ["Basic", "Standard", "Premium"],
+            "defaultValue": "Standard",
+            "metadata": {
+                "description": "The pricing tier for the hosting plan."
+            }
+        },
+        "planSize": {
+            "type": "string",
+            "allowedValues": ["1", "2", "3"],
+            "defaultValue": "1",
+            "metadata": {
+                "description": "The size of the hosting plan (small, medium, or large)."
+            }
+        },
+        "location": {
+            "type": "string",
+            "minLength": 1,
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Location for all resources."
+            }
+        },
+        "accountName": {
+            "type": "string",
+            "defaultValue": "[concat('mongodb-', uniqueString(resourceGroup().id))]",
+            "metadata": {
+                "description": "Cosmos DB account name"
+            }
+        },
+        "keyvaultName": {
+            "defaultValue": "[concat('keyvault-', uniqueString(resourceGroup().id))]",
+            "type": "string",
+            "metadata": {
+                "description": "Key vault name"
+            }
+        },
+        "servicePackageLink": {
+            "type": "securestring"
+        },
+        "autoCloseInDays": {
+            "defaultValue": "20",
+            "type": "string",
+            "metadata": {
+                "description": "Number of days until a Q & A session is automatically closed"
+            }
+        },
+        "autoDeleteInDays": {
+            "defaultValue": "25",
+            "type": "string",
+            "metadata": {
+                "description": "Number of days until a Q & A session is automatically closed"
+            }
+        }
+    },
+    "variables": {
+        "botName": "[parameters('baseResourceName')]",
+        "botAppName": "[parameters('baseResourceName')]",
+        "botAppDomain": "[concat(variables('botAppName'), '.azurewebsites.net')]",
+        "botAppUrl": "[concat('https://', variables('botAppDomain'))]",
+        "hostingPlanName": "[parameters('baseResourceName')]",
+        "cosmosDbName": "[toLower(parameters('accountName'))]",
+        "botAppInsightsName": "[parameters('baseResourceName')]",
+        "sharedSkus": ["Free", "Shared"],
+        "manifestAppId": "[parameters('botClientId')]",
+        "isSharedPlan": "[contains(variables('sharedSkus'), parameters('sku'))]",
+        "skuFamily": "[if(equals(parameters('sku'), 'Shared'), 'D', take(parameters('sku'), 1))]",
+        "botMessagingUrl": "[concat(variables('botAppUrl'), '/api/messages')]",
+        "accountName": "[toLower(parameters('accountName'))]"
+    },
+    "outputs": {
+        "botId": {
+            "type": "string",
+            "value": "[parameters('botClientId')]"
+        },
+        "appDomain": {
+            "type": "string",
+            "value": "[variables('botAppDomain')]"
+        }
+    },
+    "resources": [
+        {
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "name": "[variables('hostingPlanName')]",
+            "properties": {
+                "name": "[variables('hostingPlanName')]",
+                "hostingEnvironment": "",
+                "numberOfWorkers": 1
+            },
+            "sku": {
+                "name": "[if(variables('isSharedPlan'), concat(variables('skuFamily'),'1'), concat(variables('skuFamily'),parameters('planSize')))]",
+                "tier": "[parameters('sku')]",
+                "size": "[concat(variables('skuFamily'), parameters('planSize'))]",
+                "family": "[variables('skuFamily')]",
+                "capacity": 0
+            },
+            "type": "Microsoft.Web/serverfarms"
+        },
+        {
+            "name": "[variables('botName')]",
+            "type": "Microsoft.BotService/botServices",
+            "location": "global",
+            "apiVersion": "2018-07-12",
+            "tags": {},
+            "sku": {
+                "name": "F0"
+            },
+            "kind": "bot",
+            "properties": {
+                "displayName": "[parameters('appDisplayName')]",
+                "description": "[parameters('appDescription')]",
+                "endpoint": "[variables('botMessagingUrl')]",
+                "iconUrl": "[parameters('appIconUrl')]",
+                "msaAppId": "[parameters('botClientId')]",
+                "developerAppInsightKey": "[reference(resourceId('Microsoft.Insights/components', variables('botAppInsightsName')), '2015-05-01').InstrumentationKey]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('botAppName'))]"
+            ],
+            "resources": [
+                {
+                    "name": "[concat(variables('botName'), '/MsTeamsChannel')]",
+                    "type": "Microsoft.BotService/botServices/channels",
+                    "apiVersion": "2018-07-12",
+                    "location": "global",
+                    "sku": {
+                        "name": "F0"
+                    },
+                    "properties": {
+                        "channelName": "MsTeamsChannel",
+                        "location": "global",
+                        "properties": {
+                            "isEnabled": true
+                        }
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.BotService/botServices', variables('botName'))]"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "[variables('accountName')]",
+            "type": "Microsoft.DocumentDB/databaseAccounts",
+            "apiVersion": "2015-04-08",
+            "location": "[parameters('location')]",
+            "kind": "MongoDB",
+            "scale": null,
+            "properties": {
+                "ipRangeFilter": "",
+                "enableAutomaticFailover": false,
+                "enableMultipleWriteLocations": true,
+                "isVirtualNetworkFilterEnabled": false,
+                "virtualNetworkRules": [],
+                "databaseAccountOfferType": "Standard",
+                "consistencyPolicy": {
+                    "defaultConsistencyLevel": "Session",
+                    "maxIntervalInSeconds": 5,
+                    "maxStalenessPrefix": 100
+                },
+                "locations": [
+                    {
+                        "locationName": "[parameters('location')]",
+                        "provisioningState": "Succeeded",
+                        "failoverPriority": 0
+                    }
+                ],
+                "capabilities": []
+            }
+        },
+        {
+            "type": "Microsoft.Web/sites",
+            "kind": "app",
+            "name": "[variables('botAppName')]",
+            "apiVersion": "2016-08-01",
+            "location": "[parameters('location')]",
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "properties": {
+                "name": "[variables('botAppName')]",
+                "enabled": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', variables('hostingPlanName'))]",
+                "reserved": false,
+                "clientAffinityEnabled": true,
+                "clientCertEnabled": false,
+                "hostNamesDisabled": false,
+                "containerSize": 0,
+                "dailyMemoryTimeQuota": 0,
+                "httpsOnly": true,
+                "siteConfig": {
+                    "alwaysOn": true,
+                    "appSettings": [
+                        {
+                            "name": "MicrosoftAppId",
+                            "value": "[parameters('botClientId')]"
+                        },
+                        {
+                            "name": "HostName",
+                            "value": "[variables('botAppDomain')]"
+                        },
+                        {
+                            "name": "Version",
+                            "value": "1.0.0"
+                        },
+                        {
+                            "name": "Company",
+                            "value": "TBD"
+                        },
+                        {
+                            "name": "TenantId",
+                            "value": "[parameters('allowedTenantId')]"
+                        },
+                        {
+                            "name": "BotDisplayName",
+                            "value": "[variables('botName')]"
+                        },
+                        {
+                            "name": "ManifestAppId",
+                            "value": "[variables('manifestAppId')]"
+                        },
+                        {
+                            "name": "UpdateMainCardDebounceTimeInterval",
+                            "value": "15000"
+                        },
+                        {
+                            "name": "UpdateMainCardDebounceMaxWait",
+                            "value": "20000"
+                        },
+                        {
+                            "name": "UpdateMainCardPostDebounceTimeInterval",
+                            "value": "5000"
+                        },
+                        {
+                            "name": "Language",
+                            "value": "en"
+                        },
+
+                        {
+                            "name": "FallbackLanguage",
+                            "value": "en"
+                        },
+                        {
+                            "name": "DefaultMaxRetryCount",
+                            "value": "5"
+                        },
+                        {
+                            "name": "DefaultMaxWaitTime",
+                            "value": "5000"
+                        },
+                        {
+                            "name": "DefaultRetryAfterMs",
+                            "value": "500"
+                        },
+                        {
+                            "name": "ExponentialRetryMaxWaitTime",
+                            "value": "10000"
+                        },
+                        {
+                            "name": "ExponentialRetryAfterMs",
+                            "value": "100"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "10.15.2"
+                        },
+                        {
+                            "name": "KeyVaultName",
+                            "value": "[parameters('keyvaultName')]"
+                        },
+                        {
+                            "name": "ExpireInMemorySecretsAfterMs",
+                            "value": "86400000"
+                        },
+                        {
+                            "name": "AutoCloseInDays",
+                            "value": "[parameters('autoCloseInDays')]"
+                        },
+                        {
+                            "name": "AutoDeleteInDays",
+                            "value": "[parameters('autoDeleteInDays')]"
+                        }
+                    ]
+                }
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
+                "[resourceId('Microsoft.Insights/components', variables('botAppInsightsName'))]",
+                "[resourceId('Microsoft.DocumentDb/databaseAccounts', variables('cosmosDbName'))]"
+            ],
+            "resources": [
+                {
+                    "apiVersion": "2018-02-01",
+                    "name": "MSDeploy",
+                    "type": "Extensions",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/Sites', variables('botAppName'))]"
+                    ],
+                    "properties": {
+                        "packageUri": "[parameters('servicePackageLink')]"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[variables('botAppInsightsName')]",
+            "type": "Microsoft.Insights/components",
+            "kind": "other",
+            "apiVersion": "2015-05-01",
+            "location": "[parameters('location')]",
+            "tags": {
+                "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('botAppName'))]": "Resource"
+            },
+            "properties": {
+                "Application_Type": "other"
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults",
+            "apiVersion": "2016-10-01",
+            "name": "[parameters('keyvaultName')]",
+            "location": "[parameters('location')]",
+            "properties": {
+                "sku": {
+                    "family": "A",
+                    "name": "standard"
+                },
+                "tenantId": "[parameters('tenantId')]",
+                "accessPolicies": [
+                    {
+                        "tenantId": "[parameters('tenantId')]",
+                        "objectId": "[reference(resourceId('Microsoft.Web/sites', variables('botAppName')), '2016-08-01', 'Full').identity.principalId]",
+                        "permissions": {
+                            "keys": [],
+                            "secrets": ["get"],
+                            "certificates": []
+                        }
+                    }
+                ],
+                "enabledForDeployment": false,
+                "enabledForDiskEncryption": false,
+                "enabledForTemplateDeployment": false,
+                "enableSoftDelete": true
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('botAppName'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2016-10-01",
+            "name": "[concat(parameters('keyvaultName'), '/MongoDbUri')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]",
+                "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('accountName'))]"
+            ],
+            "properties": {
+                "value": "[listConnectionStrings(resourceId('Microsoft.DocumentDB/databaseAccounts', parameters('accountName')), '2019-12-12').connectionStrings[0].connectionString]",
+                "attributes": {
+                    "enabled": true
+                }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2016-10-01",
+            "name": "[concat(parameters('keyvaultName'), '/ApplicationInsightsInstrumentationKey')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]",
+                "[resourceId('Microsoft.Insights/components/', variables('botAppInsightsName'))]"
+            ],
+            "properties": {
+                "value": "[reference(resourceId('Microsoft.Insights/components/', variables('botAppInsightsName')), '2015-05-01').InstrumentationKey]",
+                "attributes": {
+                    "enabled": true
+                }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2016-10-01",
+            "name": "[concat(parameters('keyvaultName'), '/MicrosoftAppPassword')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('botClientSecret')]",
+                "attributes": {
+                    "enabled": true
+                }
+            }
+        },
+        {
+            "type": "Microsoft.KeyVault/vaults/secrets",
+            "apiVersion": "2016-10-01",
+            "name": "[concat(parameters('keyvaultName'), '/AvatarKey')]",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('keyvaultName'))]"
+            ],
+            "properties": {
+                "value": "[parameters('botClientSecret')]",
+                "attributes": {
+                    "enabled": true
+                }
+            }
+        }
+    ]
+}

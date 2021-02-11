@@ -12,6 +12,7 @@ export const errorCard = () =>
             {
                 type: 'TextBlock',
                 text: '${errorMessage}',
+                wrap: true
             },
         ],
     };

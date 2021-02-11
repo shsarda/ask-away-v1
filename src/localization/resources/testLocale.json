@@ -31,11 +31,13 @@
         "descriptionFieldLabel": "descriptionFieldLabel",
         "descriptionFieldExample": "descriptionFieldExample",
         "taskModuleTitle": "taskModuleTitle",
-        "taskModuleTitleEdit": "taskModuleTitleEdit"
+        "taskModuleTitleEdit": "taskModuleTitleEdit",
+        "additionalInfo": "additionalInfo"
     },
     "endQnA": {
         "taskModuleTitle": "taskModuleTitle",
-        "prompt": "prompt"
+        "prompt": "prompt",
+        "sessionDeletionDetails": "sessionDeletionDetails"
     },
     "askQuestion": {
         "textFieldExample": "textFieldExample",
@@ -49,8 +51,10 @@
         "missingFields": "missingFields",
         "taskFetch": "taskFetch",
         "taskSubmit": "taskSubmit",
+        "expired": "expired",
         "leaderboard": "leaderboard",
-        "conversationInvalid": "conversationInvalid"
+        "conversationInvalid": "conversationInvalid",
+        "autoEnded": "autoEnded"
     },
     "generic": {
         "submit": "submit",

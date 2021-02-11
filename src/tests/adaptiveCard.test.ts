@@ -99,6 +99,14 @@ describe('get start qna card', () => {
                                                 'descriptionFieldExample'
                                             ),
                                         },
+                                        {              
+                                            "isSubtle": true,   
+                                            "size": "Small",    
+                                            "text": "", // Don't have any text if we don't have the times set
+                                            "type": "TextBlock",
+                                            "weight": "Lighter",
+                                            "wrap": true,       
+                                        },                    
                                     ],
                                 },
                             ],
@@ -121,8 +129,11 @@ describe('get start qna card', () => {
         const result = getStartQnACard(
             sampleTitle,
             sampleDescription,
-            sampleErrorMessage
+            sampleErrorMessage,
+            20, // days to end
+            25 // days until delete
         );
+
         const expected = <IAdaptiveCard>{
             $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
             type: 'AdaptiveCard',
@@ -174,6 +185,14 @@ describe('get start qna card', () => {
                                                 'descriptionFieldExample'
                                             ),
                                         },
+                                        {                  
+                                            "isSubtle": true,       
+                                            "size": "Small",        
+                                            "text": "Q&A sessions will automatically end 20 days from creation, after which users will no longer be able to ask questions. Q&A sessions will be deleted completely after 25 days due to data privacy requirements.",             
+                                            "type": "TextBlock",    
+                                            "weight": "Lighter",    
+                                            "wrap": true,           
+                                        },                        
                                     ],
                                 },
                             ],
@@ -272,7 +291,7 @@ test('get resubmit question card', () => {
     expect(result).toEqual(_adaptiveCard(expected));
 });
 
-test('get end qna confirmation card', () => {
+test('get end qna confirmation card with expiration parameters unset', () => {
     const result = getEndQnAConfirmationCard(sampleQnASessionID);
     const expected = <IAdaptiveCard>{
         $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
@@ -283,6 +302,54 @@ test('get end qna confirmation card', () => {
                 type: 'TextBlock',
                 text: endQnAStrings('prompt'),
                 size: 'large',
+            },
+            {
+                type: 'TextBlock',
+                text: '',
+                size: 'default',
+            },
+        ],
+        actions: [
+            {
+                id: 'cancelEndQnA',
+                type: 'Action.Submit',
+                title: genericStrings('cancel'),
+                data: {
+                    qnaSessionId: sampleQnASessionID,
+                    id: 'cancelEndQnA',
+                },
+            },
+            {
+                id: 'submitEndQnA',
+                type: 'Action.Submit',
+                title: genericStrings('endSession'),
+                data: {
+                    qnaSessionId: sampleQnASessionID,
+                    id: 'submitEndQnA',
+                },
+            },
+        ],
+    };
+
+    expect(result).toEqual(_adaptiveCard(expected));
+});
+
+test('get end qna confirmation card with expiration parameters set', () => {
+    const result = getEndQnAConfirmationCard(sampleQnASessionID, 25);
+    const expected = <IAdaptiveCard>{
+        $schema: 'http://adaptivecards.io/schemas/adaptive-card.json',
+        type: 'AdaptiveCard',
+        version: '1.0',
+        body: [
+            {
+                type: 'TextBlock',
+                text: endQnAStrings('prompt'),
+                size: 'large',
+            },
+            {
+                type: 'TextBlock',
+                text: 'Ask Away session data will be deleted 25 days after the session is ended.',
+                size: 'default',
             },
         ],
         actions: [
@@ -320,6 +387,7 @@ test('get error card', () => {
             {
                 type: 'TextBlock',
                 text: sampleErrorMessage,
+                wrap: true
             },
         ],
     };

@@ -33,7 +33,8 @@ const _stringFunctionsTest = (
 ) => {
     Object.keys(stringsObject).forEach((key: keyof typeof stringsObject) => {
         expect(stringsObject[key]).toBeTruthy();
-        expect(stringFunction(key)).toBe(stringsObject[key]);
+        const expected = (<string> stringsObject[key]).replace(/\{\{[^\}]+\}\}/gi, '');
+        expect(stringFunction(key)).toBe(expected);
     });
 };
 

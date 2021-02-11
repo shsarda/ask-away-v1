@@ -1,0 +1,105 @@
+name: $(Date:yyyMMdd)$(Rev:.r)
+pool:
+    vmImage: 'windows-latest'
+trigger:
+    branches:
+        include:
+            - askaway-for-msft/main
+stages:
+    - stage: Build
+      jobs:
+          - job: Build
+            workspace:
+                clean: all
+            steps:
+                - task: ComponentGovernanceComponentDetection@0
+                  inputs:
+                      scanType: 'Register'
+                      verbosity: 'Verbose'
+                      alertWarningLevel: 'High'
+                      failOnAlert: true
+                - task: CredScan@2
+                  inputs:
+                      toolMajorVersion: 'V2'
+                - script: npm install
+                  displayName: Install Dependencies
+                - script: npm run-script build
+                  displayName: Build
+                  env:
+                      NODE_ENV: production
+                - script: npm run ci-test
+                  displayName: Run Tests and Coverage
+                  timeoutInMinutes: 20
+                - task: PublishBuildArtifacts@1
+                  displayName: 'Upload NPM cache logs'
+                  inputs:
+                      pathtoPublish: 'C:\npm\cache\_logs'
+                      artifactName: 'npm-logs'
+                  condition: failed()
+                - task: PublishTestResults@2
+                  inputs:
+                      testResultsFormat: 'JUnit'
+                      testResultsFiles: './junit.xml'
+                      mergeTestResults: true
+                      failTaskOnFailedTests: true
+                      testRunTitle: 'Unit Tests'
+                - task: PublishCodeCoverageResults@1
+                  inputs:
+                      codeCoverageTool: 'Cobertura'
+                      summaryFileLocation: 'coverage/cobertura-coverage.xml'
+                - task: DeleteFiles@1
+                  displayName: 'Delete test artifacts'
+                  inputs:
+                      SourceFolder: './'
+                      Contents: |
+                          junit.xml
+                          ./coverage
+                      RemoveSourceFolder: false
+                - task: DeleteFiles@1
+                  displayName: 'Delete coverage files'
+                  inputs:
+                      SourceFolder: './coverage'
+                      Contents: '*'
+                      RemoveSourceFolder: true
+                - task: CopyFiles@2
+                  displayName: 'Copy AskAway Artifacts to Temp Folder'
+                  inputs:
+                      SourceFolder: './'
+                      Contents: |
+                          dist/**/*
+                          package.json
+                          package-lock.json
+                          Web.config
+                      TargetFolder: './temp/'
+                - script: npm install --production
+                  displayName: Install Production dependencies
+                  workingDirectory: ./temp/
+                  env:
+                      NODE_ENV: production
+                - task: CopyFiles@2
+                  displayName: 'Copy EV2 Artifacts'
+                  inputs:
+                      SourceFolder: './askaway-for-msft/ev2/'
+                      Contents: '**'
+                      TargetFolder: '$(Build.ArtifactStagingDirectory)/Deployment/'
+                - task: ArchiveFiles@2
+                  displayName: 'Create AskAway.zip'
+                  inputs:
+                      rootFolderOrFile: './temp/'
+                      includeRootFolder: false
+                      archiveType: 'zip'
+                      archiveFile: '$(Build.ArtifactStagingDirectory)/Deployment/bin/AskAway.zip'
+                      replaceExistingArchive: true
+                - task: FileTransform@1
+                  displayName: 'Set production ev2 values'
+                  inputs:
+                      folderPath: '$(Build.ArtifactStagingDirectory)/Deployment/'
+                      fileType: 'json'
+                      targetFiles: |
+                          ServiceModel.json
+                          Parameters/ArmParameters.json
+                - task: artifactDropTask@0
+                  inputs:
+                      dropServiceURI: 'https://msteams-captain.artifacts.visualstudio.com/DefaultCollection'
+                      buildNumber: 'askaway/$(Build.BuildNumber)/$(Build.BuildId)'
+                      sourcePath: '$(Build.ArtifactStagingDirectory)/'

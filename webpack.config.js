@@ -58,7 +58,10 @@ var config = [{
                     { from: path.join(__dirname, 'src/public'), to: path.join(__dirname, 'dist/public') }
                 ]
             })
-        ]
+        ],
+        optimization: {
+            minimize: false
+        }
     },
 ];
 

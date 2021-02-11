@@ -7,6 +7,7 @@ import { IQuestion, IQuestionPopulatedUser } from 'src/Data/Schemas/Question';
 import { exceptionLogger } from 'src/util/ExceptionTracking';
 import jimp from 'jimp';
 import { join } from 'path';
+import moment from 'moment';
 
 export const getMainCard = adaptiveCardBuilder.getMainCard;
 export const getStartQnACard = adaptiveCardBuilder.getStartQnACard;
@@ -269,11 +270,12 @@ export const getEndQnAConfirmationCard = (
  */
 export const endQnASession = async (
     qnaSessionId: string,
-    aadObjectId: string
+    aadObjectId: string,
+    systemInitiated = false,
 ): Promise<Result<{ card: AdaptiveCard; activityId: string }, Error>> => {
     try {
         const isActive = await db.isActiveQnA(qnaSessionId);
-        const isHost = await db.isHost(qnaSessionId, aadObjectId);
+        const isHost = systemInitiated ? true : await db.isHost(qnaSessionId, aadObjectId);
 
         if (!isActive) return err(Error('The QnA session has already ended'));
         if (!isHost)
@@ -371,6 +373,32 @@ export const validateConversationId = async (
             qnaSessionData.conversationId.split(';')[0] ===
                 conversationId.split(';')[0]
         );
+    } catch (error) {
+        exceptionLogger(error);
+        return err(
+            new Error('Unable to validate conversationId of incoming request')
+        );
+    }
+};
+
+/**
+ * Function to validate that the session hasn't expired
+ * @param qnaSessionId - qnaSessionId of the QnA session that the request pertains to
+ * @param conversationId - conversationId of the conversation the incoming request is coming from
+ * @returns - boolean indicating whether the QnA session is active.
+ */
+export const validateSessionExpiration = async (
+    qnaSessionId: string,
+    maxDays: number
+): Promise<Result<boolean, Error>> => {
+    if ( maxDays < 0 ) { 
+        return ok(true);
+    }
+    try {
+        const qnaSessionData = await db.getQnASessionData(qnaSessionId);
+        const daysAgo = moment.duration(moment().diff(moment(qnaSessionData.dateCreated))).asDays();
+        const isInvalid = daysAgo <= maxDays;
+        return ok(isInvalid);
     } catch (error) {
         exceptionLogger(error);
         return err(
