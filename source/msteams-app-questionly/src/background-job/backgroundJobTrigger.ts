@@ -209,7 +209,7 @@ const getToken = async (): Promise<string> => {
     const expiresAfterMs = accessToken.expiresOnTimestamp - currentTimestamp;
     putIntoMemoryCache(accessTokenName, token, expiresAfterMs);
 
-    exceptionLogger('*** Access token from api')
+    exceptionLogger('*** Access token from api, expiresAfterMs : ' + expiresAfterMs + ' accessToken.expiresOnTimestamp : ' + accessToken.expiresOnTimestamp + ' currentTimestamp : ' + currentTimestamp);
     
     return token;
 };
