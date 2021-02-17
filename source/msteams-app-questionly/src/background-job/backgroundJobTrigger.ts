@@ -199,7 +199,6 @@ const getToken = async (): Promise<string> => {
         const expiresOnTimestamp = Number(getFromMemoryCache(accessTokenExpiresOnTimestamp));
         const nowTime = new Date().getTime();
         if (nowTime < expiresOnTimestamp) {
-            exceptionLogger(new Error(`**** Old token : ${nowTime} now: cache : ${expiresOnTimestamp}`))
             return token;
         }
     }
@@ -207,9 +206,6 @@ const getToken = async (): Promise<string> => {
     if (!accessToken) {
         throw new Error('Error while fetching access token for background job.');
     }
-
-    exceptionLogger(new Error(`**** New token : ${accessToken.expiresOnTimestamp}`))
-
     token = accessToken.token;
 
     const retryAfterMs = ifNumber(process.env.ExpireInMemorySecretsAfterMs, 24 * 60 * 60 * 1000);
