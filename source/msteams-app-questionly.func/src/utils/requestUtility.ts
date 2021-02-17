@@ -48,14 +48,11 @@ export const isCardRefreshNeededForQuestionEvent = (
  * @param req - http request 
  */
 export const validateToken = async (context: Context, req: HttpRequest): Promise<Boolean> => {
-  if (process.env.debugMode === "true") {
-    return true;
-  }
   const isAuthenticRequest = await authenticateRequest(context, req);
   if (isAuthenticRequest) {
-    if (req[userIdParameterConstant] !== process.env.IdentityObjectId_AppService) {
-      return false;
+    if (req[userIdParameterConstant] === process.env.IdentityObjectId_AppService) {
+      return true;
     }
   }
-  return true;
-};
+  return false;
+}
