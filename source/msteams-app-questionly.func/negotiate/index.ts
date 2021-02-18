@@ -1,5 +1,5 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-import { authenticateRequest } from "../src/services/authService";
+import { authenticateNegotiateRequest } from "../src/services/authService";
 import {
   createInternalServerErrorResponse,
   createUnauthorizedErrorResponse,
@@ -11,7 +11,7 @@ const httpTrigger: AzureFunction = async function (
   connectionInfo: any
 ) {
   try {
-    const isAuthenticRequest = await authenticateRequest(context, req);
+    const isAuthenticRequest = await authenticateNegotiateRequest(context, req);
 
     if (isAuthenticRequest) {
       context.res.json(connectionInfo);
