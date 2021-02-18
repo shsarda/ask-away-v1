@@ -45,14 +45,12 @@ export const isCardRefreshNeededForQuestionEvent = (
 /**
  * Checks if the token is valid, and oid received in token payload is equal to object id for managed identity in app service.
  * @param context - context
- * @param req - http request 
+ * @param req - http request
  */
-export const validateToken = async (context: Context, req: HttpRequest): Promise<Boolean> => {
+export const validateTokenFromAppService = async (
+  context: Context,
+  req: HttpRequest
+): Promise<Boolean> => {
   const isAuthenticRequest = await authenticateRequest(context, req);
-  if (isAuthenticRequest) {
-    if (req[userIdParameterConstant] === process.env.IdentityObjectId_AppService) {
-      return true;
-    }
-  }
-  return false;
+  return isAuthenticRequest && (req[userIdParameterConstant] === process.env.IdentityObjectId_AppService);
 }

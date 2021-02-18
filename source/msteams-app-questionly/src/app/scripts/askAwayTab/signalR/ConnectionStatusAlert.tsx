@@ -2,9 +2,10 @@
 import './../index.scss';
 import * as React from 'react';
 import { useState } from 'react';
-import { Flex, Button, Text, FlexItem, CloseIcon, ThemePrepared } from '@fluentui/react-northstar';
-import { withTheme } from '../shared/WithTheme';
+import { Flex, Button, Text, FlexItem, CloseIcon } from '@fluentui/react-northstar';
+import { ThemeProps, withTheme } from '../shared/WithTheme';
 import { TFunction } from 'i18next';
+import { Trans } from 'react-i18next';
 
 /**
  * Properties of ConnectionStatusAlert component.
@@ -19,13 +20,11 @@ export interface ConnectionStatusAlertProps {
      * TFunction to localize strings.
      */
     t: TFunction;
-}
 
-/**
- * Theme properties taken from context.
- */
-interface ThemeProps {
-    theme: ThemePrepared;
+    /**
+     *  __FOR_UTs_ONLY_ flag disabling trans 'react-i18next' component.
+     */
+    __disableTransComponent?: boolean;
 }
 
 /**
@@ -42,12 +41,6 @@ export const ConnectionStatusAlert: React.FunctionComponent<ConnectionStatusAler
         e.preventDefault();
     };
 
-    const refreshLink = (
-        <a className="refreshNowLink" href="" onClick={(e) => refreshConnection(e)}>
-            {props.t('meetingPanel.refreshLinkText')}
-        </a>
-    );
-
     return (
         <div>
             {!dismissed && (
@@ -59,11 +52,9 @@ export const ConnectionStatusAlert: React.FunctionComponent<ConnectionStatusAler
                     <Flex vAlign="center">
                         <FlexItem>
                             <Text className="alertContent" weight="semibold">
-                                Connection lost.{' '}
-                                <a className="refreshNowLink" href="" onClick={(e) => refreshConnection(e)}>
-                                    Refresh
-                                </a>{' '}
-                                to view content. If that doesn’t do the trick, try again later.
+                                {!props.__disableTransComponent && (
+                                    <Trans t={props.t} i18nKey="meetingPanel.bannerText" components={[<a className="refreshNowLink" href="" onClick={(e) => refreshConnection(e)}></a>]}></Trans>
+                                )}
                             </Text>
                         </FlexItem>
                         <FlexItem push>

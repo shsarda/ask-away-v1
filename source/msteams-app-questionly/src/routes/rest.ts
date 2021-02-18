@@ -96,7 +96,13 @@ router.get('/:conversationId/me', async (req: Express.Request, res: Express.Resp
 
         const userRole = await getParticipantRole(meetingId, userId, tenantId, serviceUrl);
 
-        res.send(userRole);
+        const response: ClientDataContract.User = {
+            userRole: userRole,
+            userName: user.userName,
+            userId: user._id,
+        };
+
+        res.send(response);
     } catch (error) {
         next(error);
     }
@@ -218,6 +224,7 @@ router.post('/:conversationId/sessions', async (req: Express.Request, res: Expre
         const response: ClientDataContract.QnaSession = {
             sessionId: session._id,
             title: session.title,
+            description: session.description,
             isActive: session.isActive,
             hostUser: { id: user._id, name: user.userName },
             dateTimeCreated: session.dateTimeCreated,

@@ -22,9 +22,12 @@ import {
     openStartQnASessionTaskModule,
     handleEndQnASessionFlow,
     openSwitchSessionsTaskModule,
+    invokeTaskModuleForQuestionPostFailure,
+    invokeTaskModuleForQuestionUpdateFailure,
+    invokeTaskModuleForGenericError,
 } from './task-modules-utility/taskModuleHelper';
 import { ParticipantRoles } from '../../../enums/ParticipantRoles';
-import { getCurrentParticipantRole } from './shared/meetingUtility';
+import { getCurrentParticipantInfo } from './shared/meetingUtility';
 import SignalRLifecycle from './signalR/SignalRLifecycle';
 import { DataEventHandlerFactory } from './dataEventHandling/dataEventHandlerFactory';
 import { IDataEvent } from 'msteams-app-questionly.common';
@@ -50,6 +53,10 @@ export interface TabContentState {
      */
     userRole: ParticipantRoles;
     /**
+     * current user's name in meeting.
+     */
+    userName: string;
+    /**
      * Indicator to show loading experience when fetching data etc.
      */
     showLoader: boolean;
@@ -67,6 +74,7 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
         this.state = {
             selectedAmaSessionData: this.props.helper.createEmptyActiveSessionData(),
             userRole: ParticipantRoles.Attendee,
+            userName: '',
             showLoader: false,
             showNewUpdatesButton: false,
         };
@@ -104,51 +112,57 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
      */
     private updateContent = async () => {
         this.setState({ showLoader: true });
-        await this.updateUserRole();
-        await this.refreshSession();
+        try {
+            await this.refreshSession();
+            await this.updateUserData();
+        } catch (error) {
+            this.logTelemetry(error);
+            invokeTaskModuleForGenericError(this.props.t);
+        }
+
         this.setState({ showLoader: false });
     };
 
     /**
      * Refreshes currently selected session, else if no session is selected, fetches active session.
-     * TODO: handle api errors: Task1475400
      */
     refreshSession = async () => {
         this.setState({ showNewUpdatesButton: false });
 
         if (this.state.selectedAmaSessionData.sessionId) {
-            try {
-                const response = await this.props.httpService.get(`/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.selectedAmaSessionData.sessionId}`);
+            const response = await this.props.httpService.get(`/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.selectedAmaSessionData.sessionId}`);
 
-                if (response?.data) {
-                    this.setState({
-                        selectedAmaSessionData: response.data,
-                    });
-                }
-            } catch (error) {}
+            if (response?.data) {
+                this.setState({
+                    selectedAmaSessionData: response.data,
+                });
+            }
         } else {
-            this.getActiveSession();
+            await this.getActiveSession();
         }
     };
 
+    private logTelemetry = (error: Error) => {
+        this.props.appInsights.trackException({
+            exception: error,
+            severityLevel: SeverityLevel.Error,
+            properties: {
+                meetingId: this.props.teamsTabContext?.meetingId,
+                userAadObjectId: this.props.teamsTabContext?.userObjectId,
+                conversationId: this.props.teamsTabContext?.chatId,
+            },
+        });
+    };
+
     /**
-     * Fetches current user role and sets state accordingly.
+     * Fetches current user role and username and sets state accordingly.
      */
-    private async updateUserRole() {
-        try {
-            const userRole = await getCurrentParticipantRole(this.props.httpService, this.props.teamsTabContext.chatId);
-            this.setState({ userRole: userRole });
-        } catch (error) {
-            // TODO: handle this as part of error handling story, Task:1475400.
-            this.props.appInsights.trackException({
-                exception: error,
-                severityLevel: SeverityLevel.Error,
-                properties: {
-                    meetingId: this.props.teamsTabContext.meetingId,
-                    userAadObjectId: this.props.teamsTabContext.userObjectId,
-                },
-            });
-        }
+    private async updateUserData() {
+        const userData = await getCurrentParticipantInfo(this.props.httpService, this.props.teamsTabContext.chatId);
+        this.setState({
+            userRole: userData.userRole as ParticipantRoles,
+            userName: userData.userName,
+        });
     }
 
     /**
@@ -162,9 +176,9 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
                 selectedAmaSessionData: response.data[0],
             });
             return response.data[0];
+        } else {
+            return null;
         }
-
-        return null;
     };
 
     /**
@@ -190,7 +204,7 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
     /**
      * Ends active ama session.
      */
-    private endActiveSession = async (e?: any) => {
+    private endActiveSession = async () => {
         try {
             const activeSessionData = await this.getActiveSession();
 
@@ -207,6 +221,7 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
             }));
             handleTaskModuleResponseForEndQnASessionFlow(this.localize);
         } catch (error) {
+            this.logTelemetry(error);
             handleTaskModuleErrorForEndQnASessionFlow(this.localize, error);
         }
     };
@@ -234,6 +249,7 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
                         }
                     })
                     .catch((error) => {
+                        this.logTelemetry(error);
                         handleTaskModuleErrorForCreateQnASessionFlow(this.localize, error, this.endActiveSession);
                     });
             }
@@ -242,39 +258,62 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
         openStartQnASessionTaskModule(this.props.t, submitHandler, this.props.teamsTabContext.locale, this.props.teamsTabContext.theme);
     };
 
-    private handlePostNewQuestions = (event) => {
-        this.props.httpService
-            .post(`/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.selectedAmaSessionData.sessionId}/questions`, { questionContent: event })
-            .then((response: any) => {
-                if (response && response.data && response.data.id) {
-                    this.setState({
-                        selectedAmaSessionData: {
-                            ...this.state.selectedAmaSessionData,
-                            unansweredQuestions: [response.data, ...this.state.selectedAmaSessionData.unansweredQuestions],
-                        },
-                    });
-                }
-            })
-            .catch((error) => {});
+    private handlePostNewQuestions = async (event) => {
+        try {
+            const response = await this.props.httpService.post(`/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.selectedAmaSessionData.sessionId}/questions`, {
+                questionContent: event,
+            });
+
+            if (response && response.data && response.data.id) {
+                this.setState({
+                    selectedAmaSessionData: {
+                        ...this.state.selectedAmaSessionData,
+                        unansweredQuestions: [response.data, ...this.state.selectedAmaSessionData.unansweredQuestions],
+                    },
+                });
+            } else {
+                throw new Error(`invalid response from post question api, response: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            invokeTaskModuleForQuestionPostFailure(this.props.t);
+
+            this.logTelemetry(error);
+        }
     };
 
-    private validateClickAction = (event) => {
-        this.props.httpService
-            .patch(`/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.selectedAmaSessionData.sessionId}/questions/${event.question['id']}`, { action: event.actionValue })
-            .then((response: any) => {
-                if (response.data && response.data.id) {
-                    let questions = this.state.selectedAmaSessionData[event.key];
-                    const index = questions.findIndex((q) => q.id === response.data.id);
-                    questions[index] = response.data;
-                    this.setState((prevState) => ({
-                        selectedAmaSessionData: {
-                            ...prevState.selectedAmaSessionData,
-                            ...questions,
-                        },
-                    }));
-                }
-            })
-            .catch((error) => {});
+    private validateClickAction = async (event) => {
+        try {
+            const response = await this.props.httpService.patch(
+                `/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.selectedAmaSessionData.sessionId}/questions/${event.question['id']}`,
+                { action: event.actionValue }
+            );
+
+            if (response.data && response.data.id) {
+                let questions = this.state.selectedAmaSessionData[event.key];
+                const index = questions.findIndex((q) => q.id === response.data.id);
+                questions[index] = response.data;
+                this.setState((prevState) => ({
+                    selectedAmaSessionData: {
+                        ...prevState.selectedAmaSessionData,
+                        ...questions,
+                    },
+                }));
+            } else {
+                throw new Error(`invalid response from update question api. response: ${response.status} ${response.statusText}`);
+            }
+        } catch (error) {
+            invokeTaskModuleForQuestionUpdateFailure(this.props.t);
+            this.props.appInsights.trackException({
+                exception: error,
+                severityLevel: SeverityLevel.Error,
+                properties: {
+                    meetingId: this.props.teamsTabContext.meetingId,
+                    userAadObjectId: this.props.teamsTabContext.userObjectId,
+                    questionId: event?.question?.id,
+                    message: `Failure in updating question, update action ${event?.actionValue}`,
+                },
+            });
+        }
     };
 
     /**
@@ -332,11 +371,11 @@ export class TabContent extends React.Component<TabContentProps, TabContentState
                                     <Button.Content className="newUpdatesButtonContent" content="New updates"></Button.Content>
                                 </Button>
                             )}
-                            <PostNewQuestions t={this.localize} activeSessionData={selectedAmaSessionData} onPostNewQuestion={this.handlePostNewQuestions} />
+                            <PostNewQuestions t={this.localize} activeSessionData={selectedAmaSessionData} userName={this.state.userName} onPostNewQuestion={this.handlePostNewQuestions} />
                             {selectedAmaSessionData.unansweredQuestions.length > 0 || selectedAmaSessionData.answeredQuestions.length > 0 ? (
                                 <TabQuestions t={this.localize} onClickAction={this.validateClickAction} activeSessionData={selectedAmaSessionData} teamsTabContext={this.props.teamsTabContext} />
                             ) : (
-                                <NoQuestionDesign t={this.localize} />
+                                <NoQuestionDesign isSessionActive={selectedAmaSessionData.isActive} t={this.localize} />
                             )}
                         </div>
                     </Flex>

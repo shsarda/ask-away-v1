@@ -1,20 +1,18 @@
 import './../index.scss';
 import * as React from 'react';
-import { Flex, Text, Button, FlexItem, Card, Divider, Avatar, TextArea, ThemePrepared } from '@fluentui/react-northstar';
+import { Flex, Text, Button, FlexItem, Card, Divider, Avatar, TextArea } from '@fluentui/react-northstar';
 import Badge from '../shared/Badge';
 import { useState } from 'react';
 import { ClientDataContract } from '../../../../../src/contracts/clientDataContract';
-import { withTheme } from '../shared/WithTheme';
+import { ThemeProps, withTheme } from '../shared/WithTheme';
 import Helper from '../shared/Helper';
 
-interface ThemeProps {
-    theme: ThemePrepared;
-}
 /**
  * Properties for the PostNewQuestions React component
  */
 export interface PostNewQuestionsProps {
     activeSessionData: ClientDataContract.QnaSession;
+    userName: string;
     t: Function;
     onPostNewQuestion: Function;
 }
@@ -41,7 +39,7 @@ const PostNewQuestions: React.FunctionComponent<PostNewQuestionsProps & ThemePro
                                 styles={
                                     props.activeSessionData.isActive
                                         ? { backgroundColor: colorScheme.green.background, color: colorScheme.green.foreground1 }
-                                        : { backgroundColor: colorScheme.default.background5, color: colorScheme.green.foreground4 }
+                                        : { backgroundColor: colorScheme.default.background5, color: colorScheme.default.foregroundFocus1 }
                                 }
                                 text={props.activeSessionData.isActive ? props.t('tab.liveStatus') : props.t('tab.closedStatus')}
                             />
@@ -65,7 +63,7 @@ const PostNewQuestions: React.FunctionComponent<PostNewQuestionsProps & ThemePro
                     <Card.Footer>
                         <Divider />
                         <Flex className="question-input-flex" gap="gap.small" vAlign="center">
-                            <Avatar size="medium" name={props.activeSessionData.hostUser.name} />
+                            <Avatar size="medium" name={props.userName} />
                             <TextArea
                                 className="question-input"
                                 fluid

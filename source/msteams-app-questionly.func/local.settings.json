@@ -24,6 +24,8 @@
     "AvatarKey": "{{AvatarKey}}",
     "HostName": "{{HostName}}",
     "ExpireInMemorySecretsAfterMs": "{{ExpireInMemorySecretsAfterMs}}",
+    "MarkQuestionAsAnsweredOperationLockValidityInMS": 5000,
+    "EndSessionOperationLockValidityInMS": 5000,
     "IdentityObjectId_AppService": "{{IdentityObjectId_AppService}}"
   },
   "Host": {

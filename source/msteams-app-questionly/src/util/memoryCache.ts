@@ -1,5 +1,4 @@
-import memoryCache, { CacheClass } from "memory-cache";
-import { DefaultAzureCredential } from '@azure/identity';
+import memoryCache, { CacheClass } from 'memory-cache';
 
 let memCache: CacheClass<string, string>;
 
@@ -8,7 +7,7 @@ let memCache: CacheClass<string, string>;
  */
 export const initializeCacheInstance = () => {
     memCache = new memoryCache.Cache();
-}
+};
 
 /**
  * Get value for the given key from memory cache instance.
@@ -20,11 +19,11 @@ export const getFromMemoryCache = (key: string): string | null => {
 };
 
 /**
- * Puts key and its value in memory cache instance.
+ * Put key and its value in memory cache instance.
  * @param key - key.
  * @param value - value corresponding to the key.
  * @param retryAfterMs - expires in memeory after ms.
  */
 export const putIntoMemoryCache = (key: string, value: string, retryAfterMs: number) => {
     memCache.put(key, value, retryAfterMs);
-}
+};
