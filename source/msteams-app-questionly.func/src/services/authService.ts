@@ -78,32 +78,6 @@ export const authenticateRequest = async (
   context: Context,
   req: HttpRequest
 ): Promise<Boolean> => {
-  let token = req.headers[authorizationHeaderConstant];
-
-  if (!token) {
-    return false;
-  }
-
-  token = token.replace("Bearer", "").trim();
-  const options = getVerifyOptions();
-
-  try {
-    const decoded = await verifyAzureToken(token, options);
-    req[userIdParameterConstant] = decoded[aadObjectIdParameterConstant];
-  } catch (error) {
-    context.log.error(error);
-
-    return false;
-  }
-
-  return true;
-};
-
-
-export const authenticateNegotiateRequest = async (
-  context: Context,
-  req: HttpRequest
-): Promise<Boolean> => {
   let token = req.query[authorizationHeaderConstant];
 
   if (!token) {
