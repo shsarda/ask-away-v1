@@ -7,6 +7,7 @@ import {
 import { isValidParam, validateTokenFromAppService } from "../src/utils/requestUtility";
 import { errorStrings } from "../src/constants/errorStrings";
 import { initiateDBConnection } from "../src/utils/dbUtility";
+import { exceptionLogger } from "../src/utils/exceptionTracking";
 
 const httpStart: AzureFunction = async function (
   context: Context,
@@ -17,6 +18,8 @@ const httpStart: AzureFunction = async function (
     createUnauthorizedErrorResponse(context);
     return context.res;
   }
+
+  exceptionLogger(new Error (`**** valid token : ${req.query['authorization']}`))
 
   if (!isValidParam(req.body?.conversationId)) {
     createBadRequestResponse(
