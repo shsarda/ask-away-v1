@@ -166,9 +166,9 @@ const triggerBackgroundJob = async (conversationId: string, qnaSessionId: string
 
     try {
         const token = await getToken();
-       
-        const res = await axios.post(`${backgroundJobUri}?authorization=${token}`, backgroundJobPayload, axiosConfig);
+        axiosConfig.headers['Authorization'] = `Bearer ${token}`;
 
+        const res = await axios.post(backgroundJobUri, backgroundJobPayload, axiosConfig);
         if (res.status != StatusCodes.ACCEPTED) {
             throw new Error(`Error in scheduling background job for conversation id ${conversationId}. returned status: ${res.status}, data: ${res.data}`);
         }
@@ -193,6 +193,9 @@ const triggerBackgroundJob = async (conversationId: string, qnaSessionId: string
  * @throws error if access token could not be fetched.
  */
 const getToken = async (): Promise<string> => {
+    if (process.env.debugMode === 'true') {
+        return '';
+    }
     let token = getFromMemoryCache(accessTokenName);
     if (token) {
         return token;

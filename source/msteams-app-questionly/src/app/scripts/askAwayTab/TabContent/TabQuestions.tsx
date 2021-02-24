@@ -56,22 +56,18 @@ const TabQuestions: React.FunctionComponent<TabQuestionsProps & ThemeProps> = (p
                             return (
                                 <div key={question.id} style={{ backgroundColor: colorScheme.default.background, border: `1px solid ${colorScheme.onyx.border1}` }} className="question-layout">
                                     <Flex gap="gap.small">
-                                        <Flex.Item size="size.large">
-                                            <div>
-                                                <Flex vAlign="center" gap="gap.small" padding="padding.medium">
-                                                    <Avatar size="small" name={question.author.name} />
-                                                    <Text className="author-name" content={question.author.name} />
-                                                    <Badge
-                                                        styles={
-                                                            CONST.TAB_QUESTIONS.UNANSWERED_Q === questionType
-                                                                ? { backgroundColor: colorScheme.brand.background, color: colorScheme.brand.foreground4 }
-                                                                : { backgroundColor: colorScheme.green.background, color: colorScheme.green.foreground1 }
-                                                        }
-                                                        text={CONST.TAB_QUESTIONS.UNANSWERED_Q === questionType ? props.t('tab.pendingStatus') : props.t('tab.answeredStatus')}
-                                                    />
-                                                </Flex>
-                                            </div>
-                                        </Flex.Item>
+                                        <Flex vAlign="center" gap="gap.small" padding="padding.medium">
+                                            <Avatar size="small" name={question.author.name} />
+                                            <Text size="small" content={question.author.name} />
+                                            <Badge
+                                                styles={
+                                                    CONST.TAB_QUESTIONS.UNANSWERED_Q === questionType
+                                                        ? { backgroundColor: colorScheme.brand.background, color: colorScheme.brand.foreground4, paddingBottom: '0.3rem' }
+                                                        : { backgroundColor: colorScheme.green.background, color: colorScheme.green.foreground1, paddingBottom: '0.3rem' }
+                                                }
+                                                text={CONST.TAB_QUESTIONS.UNANSWERED_Q === questionType ? props.t('tab.pendingStatus') : props.t('tab.answeredStatus')}
+                                            />
+                                        </Flex>
                                         <Flex.Item push>
                                             <Flex gap="gap.small" vAlign="center" styles={{ position: 'relative', right: '1.5rem' }}>
                                                 <Button
@@ -88,12 +84,12 @@ const TabQuestions: React.FunctionComponent<TabQuestionsProps & ThemeProps> = (p
                                                     iconOnly
                                                     text
                                                 />
-                                                <Text content={question.votesCount} />
+                                                <Text content={question.voterAadObjectIds.length} />
                                             </Flex>
                                         </Flex.Item>
                                     </Flex>
-                                    <Flex gap="gap.small" padding="padding.medium">
-                                        <Text className="text-format" content={question.content} />
+                                    <Flex gap="gap.small" padding="padding.medium" className="text-format">
+                                        <Text size="medium" content={question.content} />
                                     </Flex>
                                 </div>
                             );

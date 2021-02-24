@@ -36,6 +36,7 @@ const PostNewQuestions: React.FunctionComponent<PostNewQuestionsProps & ThemePro
                     <Flex gap="gap.small">
                         <Flex column>
                             <Badge
+                                className="badge"
                                 styles={
                                     props.activeSessionData.isActive
                                         ? { backgroundColor: colorScheme.green.background, color: colorScheme.green.foreground1 }
@@ -56,7 +57,7 @@ const PostNewQuestions: React.FunctionComponent<PostNewQuestionsProps & ThemePro
                 </Card.Header>
                 <Card.Body>
                     <Flex column gap="gap.small">
-                        <Text className="session-title" weight="bold" content={props.activeSessionData.title} />
+                        <Text className="session-title" size="large" weight="bold" content={props.activeSessionData.title} />
                     </Flex>
                 </Card.Body>
                 {props.activeSessionData.isActive && (
@@ -81,6 +82,11 @@ const PostNewQuestions: React.FunctionComponent<PostNewQuestionsProps & ThemePro
                                 </Button>
                             </FlexItem>
                         </Flex>
+                    </Card.Footer>
+                )}
+                {!props.activeSessionData.isActive && (
+                    <Card.Footer styles={{ marginBottom: '0' }}>
+                        <Text content={props.activeSessionData.description} />
                     </Card.Footer>
                 )}
             </Card>

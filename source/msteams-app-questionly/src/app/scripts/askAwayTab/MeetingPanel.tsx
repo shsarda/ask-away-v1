@@ -1,7 +1,7 @@
 // tslint:disable:no-relative-imports
 import './index.scss';
 import * as React from 'react';
-import { ArrowUpIcon, Flex, Button, Loader, FlexItem } from '@fluentui/react-northstar';
+import { Flex, Button, Loader, FlexItem } from '@fluentui/react-northstar';
 import {
     handleTaskModuleErrorForCreateQnASessionFlow,
     handleTaskModuleErrorForEndQnASessionFlow,
@@ -13,7 +13,7 @@ import {
 import * as microsoftTeams from '@microsoft/teams-js';
 import { withTranslation, WithTranslation } from 'react-i18next';
 import { TFunction } from 'i18next';
-import { ApplicationInsights, SeverityLevel } from '@microsoft/applicationinsights-web';
+import { SeverityLevel } from '@microsoft/applicationinsights-web';
 import { HttpService } from './shared/HttpService';
 import SignalRLifecycle from './signalR/SignalRLifecycle';
 import QuestionsList from './MeetingPanel/QuestionsList';
@@ -26,6 +26,7 @@ import { IDataEvent } from 'msteams-app-questionly.common';
 import { ParticipantRoles } from '../../../enums/ParticipantRoles';
 import { getCurrentParticipantInfo, isPresenterOrOrganizer } from './shared/meetingUtility';
 import EmptyTile from './MeetingPanel/EmptyTile';
+import { trackException } from '../telemetryService';
 
 const collaborationImage = require('./../../web/assets/collaboration.png');
 const noSessionImageForAttendees = require('./../../web/assets/relax_and_wait.png');
@@ -36,7 +37,6 @@ const noSessionImageForAttendees = require('./../../web/assets/relax_and_wait.pn
 export interface MeetingPanelProps extends WithTranslation {
     teamsTabContext: microsoftTeams.Context;
     httpService: HttpService;
-    appInsights: ApplicationInsights;
     helper: Helper;
 }
 
@@ -91,14 +91,10 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
     }
 
     private logTelemetry = (error: Error) => {
-        this.props.appInsights.trackException({
-            exception: error,
-            severityLevel: SeverityLevel.Error,
-            properties: {
-                meetingId: this.props.teamsTabContext?.meetingId,
-                userAadObjectId: this.props.teamsTabContext?.userObjectId,
-                conversationId: this.props.teamsTabContext?.chatId,
-            },
+        trackException(error, SeverityLevel.Error, {
+            meetingId: this.props.teamsTabContext?.meetingId,
+            userAadObjectId: this.props.teamsTabContext?.userObjectId,
+            conversationId: this.props.teamsTabContext?.chatId,
         });
     };
 
@@ -114,7 +110,7 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
      * Shows loader and updates entire content of the screen.
      */
     private updateContent = async () => {
-        this.setState({ showLoader: true });
+        this.setState({ showLoader: true, showNewUpdatesButton: false });
         try {
             await this.getActiveSession();
             await this.updateUserRole();
@@ -123,7 +119,7 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
             invokeTaskModuleForGenericError(this.props.t);
         }
 
-        this.setState({ showNewUpdatesButton: false, showLoader: false });
+        this.setState({ showLoader: false });
     };
 
     /**
@@ -155,9 +151,10 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
             this.setState({
                 activeSessionData: this.props.helper.createEmptyActiveSessionData(),
                 isActiveSessionEnded: true,
+                showNewUpdatesButton: false,
             });
         } else {
-            this.setState({ activeSessionData: sessionData });
+            this.setState({ activeSessionData: sessionData, showNewUpdatesButton: false });
         }
     };
 
@@ -180,15 +177,16 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
      * To End the active session
      * @param e - event
      */
-    endActiveSession = (e?: any) => {
+    endActiveSession = () => {
         if (this.state?.activeSessionData?.sessionId) {
             this.setState({ showLoader: true });
             this.props.httpService
                 .patch(`/conversations/${this.props.teamsTabContext.chatId}/sessions/${this.state.activeSessionData.sessionId}`, { action: 'end' })
-                .then((response: any) => {
+                .then(() => {
                     this.setState({
                         showLoader: false,
                         isActiveSessionEnded: true,
+                        showNewUpdatesButton: false,
                         activeSessionData: this.props.helper.createEmptyActiveSessionData(),
                     });
                 })
@@ -281,17 +279,15 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
                     onClickEndSession={this.handleEndQnaSessionFlow}
                     showToolBar={false}
                 />
-                <Flex hAlign="center" vAlign="center">
-                    <div className="no-question">
-                        <EmptyTile image={image} line1={text1} line2={text2} />
-                        {isUserPresenterOrOrganizer && (
-                            <Flex.Item align="center">
-                                <Button className="button" onClick={this.onShowTaskModule}>
-                                    <Button.Content>{this.localize('meetingPanel.createQnaSessionButton')}</Button.Content>
-                                </Button>
-                            </Flex.Item>
-                        )}
-                    </div>
+                <Flex className="welcome-text" column gap="gap.medium" hAlign="center" vAlign="center">
+                    <EmptyTile image={image} line1={text1} line2={text2} />
+                    {isUserPresenterOrOrganizer && (
+                        <Flex.Item align="center">
+                            <Button onClick={this.onShowTaskModule}>
+                                <Button.Content>{this.localize('meetingPanel.createQnaSessionButton')}</Button.Content>
+                            </Button>
+                        </Flex.Item>
+                    )}
                 </Flex>
             </React.Fragment>
         );
@@ -306,10 +302,7 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
         if (eventHandler) {
             eventHandler.handleEvent(dataEvent, this.state.activeSessionData, this.updateQnASessionContent, this.showNewUpdatesButton, this.updateActiveSessionData);
         } else {
-            this.props.appInsights.trackException({
-                exception: new Error(`Cant find event handler for ${dataEvent.type}`),
-                severityLevel: SeverityLevel.Error,
-            });
+            trackException(new Error(`Cant find event handler for ${dataEvent.type}`), SeverityLevel.Error);
         }
     };
 
@@ -343,7 +336,6 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
                 />
                 {stateVal.activeSessionData.unansweredQuestions.length > 0 || stateVal.activeSessionData.answeredQuestions.length > 0 ? (
                     <QuestionsList
-                        appInsights={this.props.appInsights}
                         t={this.localize}
                         userRole={stateVal.userRole}
                         activeSessionData={stateVal.activeSessionData}
@@ -351,13 +343,17 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
                         teamsTabContext={this.props.teamsTabContext}
                     />
                 ) : (
-                    <div className="no-question">
+                    <Flex className="margin-top-bottom" column gap="gap.small" hAlign="center" vAlign="center">
                         <EmptyTile image={collaborationImage} line1={this.localize('meetingPanel.noQuestionsPosted')} line2={this.localize('meetingPanel.askAway')} />
+                    </Flex>
+                )}
+                {this.state.activeSessionData.isActive && this.state.showNewUpdatesButton && (
+                    <div className="new-update-btn-wrapper">
+                        <Button primary size="medium" content={this.localize('meetingPanel.updatemessage')} onClick={this.updateQnASessionContent} className="new-updates-button" />
                     </div>
                 )}
                 <FlexItem push>
                     <NewQuestion
-                        appInsights={this.props.appInsights}
                         t={this.localize}
                         activeSessionData={stateVal.activeSessionData}
                         httpService={this.props.httpService}
@@ -389,14 +385,7 @@ export class MeetingPanel extends React.Component<MeetingPanelProps, MeetingPane
                         conversationId={this.props.teamsTabContext.chatId}
                         onEvent={this.updateEvent}
                         httpService={this.props.httpService}
-                        appInsights={this.props.appInsights}
                     />
-                    {this.state.showNewUpdatesButton && (
-                        <Button primary onClick={this.updateQnASessionContent} className="newUpdatesButton">
-                            <ArrowUpIcon xSpacing="after"></ArrowUpIcon>
-                            <Button.Content className="newUpdatesButtonContent" content={this.localize('meetingPanel.updatemessage')}></Button.Content>
-                        </Button>
-                    )}
                     {stateVal.activeSessionData.sessionId ? this.showSessionQuestions(stateVal) : this.createNewSessionLayout()}
                 </Flex>
             </React.Fragment>
