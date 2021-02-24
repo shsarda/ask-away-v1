@@ -23,7 +23,8 @@
     "memory-cache": "^0.2.0",
     "moment": "^2.29.1",
     "random": "^2.2.0",
-    "seedrandom": "^3.0.5"
+    "seedrandom": "^3.0.5",
+    "mongoose": "^5.10.12"
   },
   "devDependencies": {
     "@azure/functions": "^1.0.2-beta2",
@@ -33,7 +34,6 @@
     "@types/node": "^14.11.8",
     "@types/moment": "^2.13.0",
     "jest": "^26.6.0",
-    "mongoose": "^5.10.12",
     "typescript": "^3.9.7",
     "ts-jest": "^26.4.1"
   }
