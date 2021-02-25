@@ -84,6 +84,8 @@ export const authenticateRequest = async (
     return false;
   }
 
+  console.log("*** token : " + token);
+
   token = token.replace("Bearer", "").trim();
   const options = getVerifyOptions();
 

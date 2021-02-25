@@ -2,6 +2,7 @@ import { Context, HttpRequest } from "@azure/functions";
 import { DataEventType, IDataEvent } from "msteams-app-questionly.common";
 import { userIdParameterConstant } from "../constants/requestConstants";
 import { authenticateRequest } from "../services/authService";
+import { exceptionLogger } from "./exceptionTracking";
 
 /**
  * Checks if parameter is defined.
@@ -55,6 +56,16 @@ export const validateTokenFromAppService = async (
     return true;
   }
   const isAuthenticRequest = await authenticateRequest(context, req);
+  exceptionLogger(
+    new Error(
+      "*** isAuthenticRequest : " +
+        isAuthenticRequest +
+        " req[userIdParameterConstant] : " +
+        req[userIdParameterConstant] +
+        " process.env.IdentityObjectId_AppService : " +
+        process.env.IdentityObjectId_AppService
+    )
+  );
   return (
     isAuthenticRequest &&
     req[userIdParameterConstant] === process.env.IdentityObjectId_AppService
