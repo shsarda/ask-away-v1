@@ -1,14 +1,15 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import * as signalR from '@microsoft/signalr';
+import * as microsoftTeams from '@microsoft/teams-js';
 import { StatusCodes } from 'http-status-codes';
 import { SeverityLevel } from '@microsoft/applicationinsights-web';
 import { HttpService } from '../shared/HttpService';
 import { IDataEvent } from 'msteams-app-questionly.common';
 import ConnectionStatusAlert from './ConnectionStatusAlert';
 import { TFunction } from 'i18next';
-import { trackException } from '../../telemetryService';
-import { CONST } from '../shared/Constants';
+import { TelemetryEvents } from '../../../../constants/telemetryConstants';
+import { trackEvent, trackException } from '../../telemetryService';
 
 /**
  * SignalR connection status
@@ -53,6 +54,11 @@ enum ConnectionLimit {
 
 export interface SignalRLifecycleProps {
     /**
+     * Current Teams context the frame is running in.
+     */
+    teamsTabContext: microsoftTeams.Context;
+
+    /**
      * TFunction to localize strings.
      */
     t: TFunction;
@@ -86,6 +92,11 @@ export interface SignalRLifecycleProps {
      *  __FOR_UTs_ONLY_ flag disabling trans 'react-i18next' component.
      */
     __disableTransComponent?: boolean;
+
+    /**
+     * Env variables
+     */
+    envConfig: { [key: string]: any };
 }
 
 /**
@@ -101,8 +112,15 @@ const SignalRLifecycle: React.FunctionComponent<SignalRLifecycleProps> = (props)
      * This function is triggered on events from signalR connection.
      * @param dataEvent - event received.
      */
-    const onEvent = (dataEvent: any) => {
+    const onEvent = (dataEvent: IDataEvent) => {
         props.onEvent(dataEvent);
+
+        trackEvent(TelemetryEvents.SignalREventReceived, {
+            conversationId: props.conversationId,
+            event: dataEvent,
+            userAadObjectId: props.teamsTabContext?.userObjectId,
+            meetingId: props.teamsTabContext?.meetingId,
+        });
     };
 
     /**
@@ -177,9 +195,13 @@ const SignalRLifecycle: React.FunctionComponent<SignalRLifecycleProps> = (props)
             conversationId: props.conversationId,
         };
 
-        let response = await props.httpService.get(`/config/${CONST.ENV_VARIABLES.SIGNALR_FUNCTION_BASEURL}`);
-        const signalRFunctionBaseUrl = response.data;
-        response = await props.httpService.post(`${signalRFunctionBaseUrl}/api/add-to-group`, addToGroupInputDate, false, undefined, false);
+        if (!props.envConfig.SignalRFunctionBaseUrl) {
+            trackException(new Error('Error while calling /config API. Could not get SignalRFunctionBaseUrl'), SeverityLevel.Error);
+            handleConnectionError();
+            return;
+        }
+
+        const response = await props.httpService.post(`${props.envConfig.SignalRFunctionBaseUrl}/api/add-to-group`, addToGroupInputDate, false, undefined, false);
 
         if (response.status !== StatusCodes.OK) {
             trackException(new Error(`Error in adding connection to the group, conversationId: ${props.conversationId}, reason: ${response.statusText}`), SeverityLevel.Error);
@@ -201,14 +223,15 @@ const SignalRLifecycle: React.FunctionComponent<SignalRLifecycleProps> = (props)
             setConnectionStatus(ConnectionStatus.Connecting);
             setConnectionLimit(ConnectionLimit.NotExhausted);
 
-            const response = await props.httpService.get(`/config/${CONST.ENV_VARIABLES.SIGNALR_FUNCTION_BASEURL}`);
-            const signalRFunctionBaseUrl = response.data;
+            if (!props.envConfig.SignalRFunctionBaseUrl) {
+                throw new Error('Error while calling /config API. Could not get SignalRFunctionBaseUrl');
+            }
 
             if (!connection) {
                 connection =
                     props.connection ??
                     new signalR.HubConnectionBuilder()
-                        .withUrl(`${signalRFunctionBaseUrl}/api`, {
+                        .withUrl(`${props.envConfig.SignalRFunctionBaseUrl}/api`, {
                             accessTokenFactory: async () => {
                                 return await props.httpService.getAuthToken();
                             },
@@ -241,7 +264,7 @@ const SignalRLifecycle: React.FunctionComponent<SignalRLifecycleProps> = (props)
                 // Too many connection can be logged as warning than error.
                 trackException(error, SeverityLevel.Warning);
             } else {
-               trackException(error, SeverityLevel.Error);
+                trackException(error, SeverityLevel.Error);
             }
 
             handleConnectionError();

@@ -1,23 +1,18 @@
-// tslint:disable-next-line:no-relative-imports
-import './index.scss';
-// tslint:disable-next-line:no-relative-imports
-import Helper from './shared/Helper';
-// tslint:disable-next-line:no-relative-imports
-import MeetingPanel from './MeetingPanel';
-// tslint:disable-next-line:no-relative-imports
-import TabContent from './TabContent';
-import * as React from 'react';
 import { Provider } from '@fluentui/react-northstar';
-import msteamsReactBaseComponent, { ITeamsBaseComponentState } from 'msteams-react-base-component';
-import * as microsoftTeams from '@microsoft/teams-js';
-// tslint:disable-next-line:no-relative-imports
-import { i18next } from './../askAwayTab/shared/i18next';
-import { TFunction } from 'i18next';
 import { withAITracking } from '@microsoft/applicationinsights-react-js';
 import { SeverityLevel } from '@microsoft/applicationinsights-web';
+import * as microsoftTeams from '@microsoft/teams-js';
+import { StatusCodes } from 'http-status-codes';
+import { TFunction } from 'i18next';
+import msteamsReactBaseComponent, { ITeamsBaseComponentState } from 'msteams-react-base-component';
+import * as React from 'react';
+import { getReactPlugin, initializeTelemetryService, trackTrace } from '../telemetryService';
+import { i18next } from './../askAwayTab/shared/i18next';
+import './index.scss';
+import MeetingPanel from './MeetingPanel';
+import Helper from './shared/Helper';
 import { HttpService } from './shared/HttpService';
-import { getReactPlugin, initializeTelemetryService, trackTrace } from './../telemetryService';
-import { CONST } from './shared/Constants';
+import TabContent from './TabContent';
 
 /**
  * State for the askAwayTabTab React component
@@ -37,6 +32,7 @@ export interface IAskAwayTabState extends ITeamsBaseComponentState {
     theme: any;
     teamContext: microsoftTeams.Context;
     frameContext?: string;
+    envConfig: { [key: string]: any };
 }
 /**
  * Properties for the askAwayTabTab React component
@@ -61,9 +57,10 @@ export class AskAwayTab extends msteamsReactBaseComponent<IAskAwayTabProps, IAsk
         await this.initializeTeams();
         this.httpService = new HttpService();
 
-        const response = await this.httpService.get(`/config/${CONST.ENV_VARIABLES.APP_INSIGHTS_INSTRUMENTATION_KEY}`);
-        if (response?.data) {
-            initializeTelemetryService(response.data);
+        const response = await this.httpService.get(`/config`);
+        if (response.status === StatusCodes.OK) {
+            initializeTelemetryService(response.data.ApplicationInsightsInstrumentationKey);
+            this.setState({ envConfig: response.data });
         } else {
             this.setState({ error: 'Could not initialize telemetry service. ApplicationInsightsInstrumentationKey not found' });
             microsoftTeams.appInitialization.notifyFailure({
@@ -130,8 +127,12 @@ export class AskAwayTab extends msteamsReactBaseComponent<IAskAwayTabProps, IAsk
             <Provider style={{ background: 'unset' }} theme={this.state.theme}>
                 <div>
                     {this.state.dataEvent && <h1>{this.state.dataEvent.type}</h1>}
-                    {this.state.frameContext === microsoftTeams.FrameContexts.sidePanel && <MeetingPanel teamsTabContext={this.state.teamContext} httpService={this.httpService} helper={Helper} />}
-                    {this.state.frameContext === microsoftTeams.FrameContexts.content && <TabContent teamsTabContext={this.state.teamContext} httpService={this.httpService} helper={Helper} />}
+                    {this.state.frameContext === microsoftTeams.FrameContexts.sidePanel && (
+                        <MeetingPanel teamsTabContext={this.state.teamContext} httpService={this.httpService} helper={Helper} envConfig={this.state.envConfig} />
+                    )}
+                    {this.state.frameContext === microsoftTeams.FrameContexts.content && (
+                        <TabContent teamsTabContext={this.state.teamContext} httpService={this.httpService} helper={Helper} envConfig={this.state.envConfig} />
+                    )}
                 </div>
             </Provider>
         );

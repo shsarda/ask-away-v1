@@ -1,4 +1,3 @@
-// tslint:disable:no-relative-imports
 import { Container, Image, TextBlock, SubmitAction, ActionSet } from 'adaptivecards';
 import {
     createCardForInsufficientPermissionsToCreateQnASessionError,
@@ -15,6 +14,15 @@ describe('test errorCardBuilder', () => {
         t = jest.fn();
         t.mockImplementation((key: string) => {
             return key;
+        });
+    });
+
+    beforeAll(() => {
+        Object.defineProperty(window, 'location', {
+            value: {
+                host: `${process.env.HostName}`,
+            },
+            writable: true,
         });
     });
 
